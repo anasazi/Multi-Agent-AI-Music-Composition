@@ -5,6 +5,8 @@ module Note
 , halfStepDown
 , wholeStepUp
 , wholeStepDown
+, nStepUp
+, nStepDown
 ) where
 
 {-
@@ -38,6 +40,9 @@ halfStepUp = succ
 halfStepDown = pred
 wholeStepUp = succ . succ
 wholeStepDown = pred . pred
+
+nStepUp x n = foldl (flip ($)) n (replicate x succ)
+nStepDown x n = foldl (flip ($)) n (replicate x pred)
 
 -- testing code
 
