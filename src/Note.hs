@@ -7,6 +7,15 @@ module Note
 , wholeStepDown
 ) where
 
+{-
+The Note module provides an ADT representing musical notes in the form of pitch class and octave pairs.
+
+Middle C is provided as a base note via the midC value.
+Other notes can be created via half and whole steps up and down.
+
+Note is an instance of Eq, Ord, Show, Read, Enum, and Bounded.
+-}
+
 import Test.QuickCheck
 import Control.Monad
 
@@ -29,6 +38,8 @@ halfStepUp = succ
 halfStepDown = pred
 wholeStepUp = succ . succ
 wholeStepDown = pred . pred
+
+-- testing code
 
 instance Arbitrary Octave where
 	arbitrary = elements allOctaves
