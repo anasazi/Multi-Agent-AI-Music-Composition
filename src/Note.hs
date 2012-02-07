@@ -50,24 +50,24 @@ class Note a where
 	normalizeAcci :: a -> a
 	normalizeNote :: a -> a
 
-nmove n f = foldl (.) id (replicate n f)
+nmove f n = foldl (.) id (replicate n f)
 
 -- attempts to change note name
 hup = normalizeNote . sharp
 hdown = normalizeNote . flat
 
-wup = nmove 2 hup
-wdown = nmove 2 hdown
+wup = nmove hup 2
+wdown = nmove hdown 2
 
 -- attempts to keep note name
 hup' = normalizeAcci . sharp
 hdown' = normalizeAcci . flat
 
-wup' = nmove 2 hup'
-wdown' = nmove 2 hdown'
+wup' = nmove hup' 2
+wdown' = nmove hdown' 2
 
-octup = nmove 12 hup
-octdown = nmove 12 hdown
+octup = nmove hup 12
+octdown = nmove hdown 12
 
 data NoteName = A | B | C | D | E | F | G deriving (Eq, Ord, Read, Show, Enum, Bounded)
 data Accidental = Flat | Sharp deriving (Eq, Ord, Read, Show, Enum, Bounded)
