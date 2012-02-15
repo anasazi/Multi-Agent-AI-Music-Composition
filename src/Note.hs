@@ -26,6 +26,11 @@ Note ADT interface:
 
 module Note 
 ( Note
+, midC
+, sharp
+, flat
+, normalizeAcci
+, normalizeNote
 , StdNote()
 , nmove
 , hup
@@ -50,7 +55,8 @@ class Note a where
 	normalizeAcci :: a -> a
 	normalizeNote :: a -> a
 
-nmove f n = foldl (.) id (replicate n f)
+nmove :: (c -> c) -> Integer -> (c -> c)
+nmove f n = foldl (.) id (replicate (fromInteger n) f)
 
 -- attempts to change note name
 hup = normalizeNote . sharp
