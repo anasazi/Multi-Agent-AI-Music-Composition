@@ -1,147 +1,69 @@
-{-# LANGUAGE NoMonomorphismRestriction #-}
-
-{-
-Note ADT interface:
-	midC -- returns a Note representing middle C
-	sharp -- applies a sharp
-	flat -- applies a flat
-	normalizeNote -- simplfy to a single accidental (possibly change note name)
-	normalizeAcci -- simplfy sharps and flats as much as possible
-
-	moving half steps while attempting to change note name (at most one accidental)
-			example: C -> Db, B -> C, Ab -> A
-		hup -- up a half step
-		hdown -- down a half step
-
-	moving half steps while attempting to keep note name (at most one accidental)
-			example: C -> C#, B -> B#, G# -> A
-		hup' -- up a half step
-		hdown' -- down a half step
-
-	special motions based on above:
-		whole step (wup, ...)
-		octaves (octup, ...)
-		n of some motion
--}
-
-module Note 
-( Note
-, StdNote()
-, nmove
-, hup
-, hdown
-, wup
-, wdown
-, hup'
-, hdown'
-, wup'
-, wdown'
-, octup
-, octdown
+module Note
+( module NoteADT
 ) where
 
+import NoteADT
+import qualified Data.List as L
 import Test.QuickCheck
 import Control.Monad
 
-class Note a where
-	midC :: a
-	sharp :: a -> a
-	flat :: a -> a
-	normalizeAcci :: a -> a
-	normalizeNote :: a -> a
-
-nmove n f = foldl (.) id (replicate n f)
-
--- attempts to change note name
-hup = normalizeNote . sharp
-hdown = normalizeNote . flat
-
-wup = nmove 2 hup
-wdown = nmove 2 hdown
-
--- attempts to keep note name
-hup' = normalizeAcci . sharp
-hdown' = normalizeAcci . flat
-
-wup' = nmove 2 hup'
-wdown' = nmove 2 hdown'
-
-octup = nmove 12 hup
-octdown = nmove 12 hdown
-
-data NoteName = A | B | C | D | E | F | G deriving (Eq, Ord, Read, Show, Enum, Bounded)
-data Accidental = Flat | Sharp deriving (Eq, Ord, Read, Show, Enum, Bounded)
-type Octave = Integer
-data StdNote = SN NoteName [Accidental] Octave deriving (Eq, Read, Show)
-
-instance Note StdNote where
-	midC = SN C [] 4
-	sharp (SN name als oct) = SN name (Sharp:als) oct
-	flat (SN name als oct) = SN name (Flat:als) oct
-	normalizeAcci (SN name als oct) = SN name normed oct
-		where
-		net = sum $ map f als
-			where
-			f Sharp = 1
-			f Flat = -1
-		normed
-			| net < 0 = replicate (abs net) Flat
-			| net > 0 = replicate net Sharp
-			| otherwise = []
-	normalizeNote n 
-		| naGood = na
-		| otherwise = normalizeNote (next na)
-		where
-		na@(SN name als oct) = normalizeAcci n
-		naGood = case als of
-							[] -> True
-							[Sharp] -> name `elem` [A,C,D,F,G]
-							[Flat] -> name `elem` [A,B,D,E,G]
-							otherwise -> False
-		next (SN B (Sharp:als) oct) = SN C als (oct+1)
-		next (SN C (Flat:als) oct) = SN B als (oct-1)
-		next (SN E (Sharp:als) oct) = SN F als oct
-		next (SN F (Flat:als) oct) = SN E als oct
-		next (SN G (Sharp:Sharp:als) oct) = SN A als oct
-		next (SN A (Flat:Flat:als) oct) = SN G als oct
-		next (SN name (Sharp:Sharp:als) oct) = SN (succ name) als oct
-		next (SN name (Flat:Flat:als) oct) = SN (pred name) als oct
+data NoteName = A | B | C | D | E | F | G deriving (Eq, Enum, Show)
 
 instance Arbitrary NoteName where
 	arbitrary = elements [A .. G]
 
+data Accidental = Flat | Sharp deriving (Eq, Ord, Show)
+
 instance Arbitrary Accidental where
 	arbitrary = elements [Flat, Sharp]
+
+type Octave = Integer
+data StdNote = SN { name :: NoteName 
+									,	accis :: [Accidental] 
+									,	oct :: Octave } deriving (Eq, Show)
 
 instance Arbitrary StdNote where
 	arbitrary = liftM3 SN arbitrary arbitrary arbitrary
 
-prop_sharpApplied :: StdNote -> Bool
-prop_sharpApplied n = let (SN _ als _) = sharp n in head als == Sharp
+instance Note StdNote where
+	midC = SN C [] 4
+	sharp n = n { accis = Sharp : accis n }
+	flat n = n { accis = Flat : accis n }
+	normA n = n { accis = L.unfoldr f . sum . concat . (map . map $ g) . L.group . L.sort $ accis n }
+		where
+		g a | a == Flat = (-1) | a == Sharp = 1
+		f n | n == 0 = Nothing | n < 0 = Just (Flat, n+1) | n > 0 = Just (Sharp, n-1)
+	normN n
+		| null (accis n) = n
+		| (accis n) == [Sharp] && (name n) `elem` [A,C,D,F,G] = n
+		| (accis n) == [Flat] && (name n) `elem` [A,B,D,E,G] = n
+		| otherwise = normN $ let n' = normA n in case n' of
+										-- B & C, change octave cases
+										(SN B (Sharp:acs) oct)	-> SN C acs (oct+1)
+										(SN C (Flat:acs) oct)		-> SN B acs (oct-1)
+										-- E & F half steps
+										(SN E (Sharp:acs) oct)	-> SN F acs oct
+										(SN F (Flat:acs) oct)		-> SN E acs oct
+										-- A & G wrap around cases
+										(SN G (Sharp:Sharp:acs) oct)	-> SN A acs oct
+										(SN A (Flat:Flat:acs) oct)		-> SN G acs oct
+										-- remainder
+										(SN nme (Sharp:Sharp:acs) oct)	-> SN (succ nme) acs oct
+										(SN nme (Flat:Flat:acs) oct)		-> SN (pred nme) acs oct
+										-- it must be a case that's okay if normalized
+										otherwise -> n'
+		
 
-prop_flatApplied :: StdNote -> Bool
-prop_flatApplied n = let (SN _ als _) = flat n in head als == Flat
-
-prop_normalizeAcciAllSame :: StdNote -> Bool
-prop_normalizeAcciAllSame n = let (SN _ als _) = normalizeAcci n in (null als) || all (==(head als)) als
-
-prop_normalizeAcciNameOctConst :: StdNote -> Bool
-prop_normalizeAcciNameOctConst n@(SN name _ oct) = let (SN name' _ oct') = normalizeAcci n in name == name' && oct == oct'
-
-prop_normalizeAcciImdempotent :: StdNote -> Bool
-prop_normalizeAcciImdempotent n = normalizeAcci (normalizeAcci n) == normalizeAcci n
-
-prop_normalizeNoteImdempotent :: StdNote -> Bool
-prop_normalizeNoteImdempotent n = normalizeNote (normalizeNote n) == normalizeNote n
-
-prop_hup'Inverse :: StdNote -> Bool
-prop_hup'Inverse n = (normalizeAcci n) == hup' (hdown' n)
-
-test = do
-	quickCheck prop_sharpApplied
-	quickCheck prop_flatApplied
-	quickCheck prop_normalizeAcciAllSame
-	quickCheck prop_normalizeAcciNameOctConst
-	quickCheck prop_normalizeAcciImdempotent
-	quickCheck prop_normalizeNoteImdempotent
-	quickCheck prop_hup'Inverse
+tests :: [ StdNote -> Bool ]
+tests = [ prop_normA_Idempotent
+				, prop_normA_sharp_flat_Inverse
+				, prop_normA_flat_sharp_Inverse
+				, prop_normN_Idempotent
+				, prop_normA_normN_Associative
+				, (==Sharp) . head . accis . sharp
+				, (==Flat) . head . accis . flat
+				, \n -> let acs = accis (normA n) in (null acs) || all (==(head acs)) acs
+				, \n -> oct n == (oct . normA $ n)
+				, \n -> name n == (name . normA $ n)
+				]
+test = mapM_ quickCheck tests
