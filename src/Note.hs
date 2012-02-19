@@ -22,9 +22,18 @@ module Note
 import Test.QuickCheck
 import Control.Monad
 import qualified Data.List as L
+import Maybe (fromJust)
 
 -- Ordered in octave numbering order.
 data NoteLetter = C | D | E | F | G | A | B deriving (Eq, Ord, Show, Enum)
+{-
+instance Enum NoteLetter where
+	fromEnum = fromJust . (flip lookup $ zip [C,D,E,F,G,A,B] [0..])
+	toEnum = fromJust . (flip lookup $ zip [0..] [C,D,E,F,G,A,B]) . (`mod`7)
+instance Bounded NoteLetter where
+	minBound = C
+	maxBound = B
+-}
 
 instance Arbitrary NoteLetter where
 	arbitrary = elements [ C .. B ]
@@ -59,7 +68,7 @@ testStaffNote = do
 newtype Accidental = AC { runA :: Integer } deriving (Eq, Ord, Show)
 
 instance Arbitrary Accidental where
-	arbitrary = liftM AC arbitrary
+	arbitrary = liftM AC (arbitrary `suchThat` \x -> x <= 1 && x >= (-1))
 
 acUp = AC . (+1) . runA
 acDown = AC . (+(-1)) . runA
@@ -82,7 +91,7 @@ noteLetter = snNL . nSN
 nl = noteLetter
 octave = snOct . nSN
 oct = octave
-accidentals = nAC
+accidentals = runA . nAC
 acs = accidentals
 
 -- Provided so that a user can generate more notes
