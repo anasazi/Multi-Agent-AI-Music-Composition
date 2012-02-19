@@ -10,12 +10,9 @@ module Interval
 , (#^)
 , (#.)
 , (#)
-, ($=$)
-, ($>$)
-, ($<$)
-, (\=/)
-, (\>/)
-, (\</)
+, ($=$) , ($>$) , ($<$)
+, (\=/) , (\>/) , (\</)
+, unison, min2, maj2, min3, maj3, perf4, perf5, min6, maj6, min7, maj7, octave
 ) where
 
 import Test.QuickCheck
@@ -23,7 +20,13 @@ import Control.Monad
 import Note
 import Maybe (fromJust)
 
-data Quality = Dim | Min | Perf | Maj | Aug deriving (Eq, Ord, Show, Enum)
+data Quality = Dim | Min | Perf | Maj | Aug deriving (Eq, Ord, {-Show,-} Enum)
+instance Show Quality where
+	show Dim = "o"
+	show Min = "m"
+	show Perf = "P"
+	show Maj = "M"
+	show Aug = "+"
 instance Arbitrary Quality where
 	arbitrary = elements [ Dim .. Aug ]
 invQ :: Quality -> Quality
@@ -31,7 +34,9 @@ invQ = toEnum . (4-) . fromEnum
 
 -- Number of letters from bottom to top inclusive (a unison is 1 letter span).
 data LetterSpan = L1 | L2 | L3 | L4 | L5 | L6 | L7 | L8
-	deriving (Eq, Ord, Show, Enum)
+	deriving (Eq, Ord, {-Show,-} Enum)
+instance Show LetterSpan where
+	show = show . (+1) . fromEnum
 instance Arbitrary LetterSpan where
 	arbitrary = elements [ L1 .. ]
 invLS :: LetterSpan -> LetterSpan
@@ -43,7 +48,9 @@ type HalfStep = Integer
 -- In this scheme an octave is denoted as C (S L1 Perf)
 data Interval = S LetterSpan Quality -- A interval less than an octave
 {-							| C Interval -- An interval extended by an octave -}
-		deriving (Eq, Show)
+		deriving (Eq{-, Show-})
+instance Show Interval where
+	show (S ls q) = show q ++ show ls
 instance Arbitrary Interval where
 	arbitrary = liftM2 S arbitrary arbitrary `suchThat` isValid
 		where isValid (S ls q)
@@ -141,6 +148,23 @@ a $<$ b = size a <  size b
 a \=/ b = width a == width b
 a \>/ b = width a >  width b
 a \</ b = width a <  width b
+
+----- COMMON INTERVALS -----
+unison = S L1 Perf
+min2 = S L2 Min
+maj2 = S L2 Maj
+min3 = S L3 Min
+maj3 = S L3 Maj
+perf4 = S L4 Perf
+perf5 = S L5 Perf
+min6 = S L6 Min
+maj6 = S L6 Maj
+min7 = S L7 Min
+maj7 = S L7 Maj
+octave = S L8 Perf
+
+
+
 
 test = do
 	quickCheck $ \q -> (==q) . invQ . invQ $ q
