@@ -12,7 +12,7 @@ module Interval
 , (#)
 , ($=$) , ($>$) , ($<$)
 , (\=/) , (\>/) , (\</)
-, unison, min2, maj2, min3, maj3, perf4, perf5, min6, maj6, min7, maj7, octave
+, unison, min2, maj2, min3, maj3, perf4, aug4, dim5, perf5, min6, maj6, min7, maj7, octave
 ) where
 
 import Test.QuickCheck
@@ -156,6 +156,8 @@ maj2 = S L2 Maj
 min3 = S L3 Min
 maj3 = S L3 Maj
 perf4 = S L4 Perf
+aug4 = S L4 Aug
+dim5 = S L5 Dim
 perf5 = S L5 Perf
 min6 = S L6 Min
 maj6 = S L6 Maj
