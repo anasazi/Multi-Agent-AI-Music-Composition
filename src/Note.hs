@@ -2,7 +2,7 @@ module Note
 ( Note
 , noteLetter
 , nl
-, octave
+--, octave
 , oct
 , accidentals
 , acs
@@ -78,7 +78,12 @@ testAccidental = do
 	quickCheck $ \a -> (==a) . acDown . acUp $ a
 
 -- A note is made up of a basic note and an accidental
-data Note = N StaffNote Accidental deriving (Eq, Ord, Show)
+data Note = N StaffNote Accidental deriving (Eq, Ord) --, Show)
+
+instance Show Note where
+	show (N (SN n o) (AC a)) = show n ++ show o ++ sign ++ show (abs a)
+		where sign | a < 0 = "-" | otherwise = "+"
+
 -- convenience functions
 nSN (N x _) = x
 nAC (N _ x) = x
@@ -89,8 +94,8 @@ instance Arbitrary Note where
 -- provided so that a user can examine the traits of a note
 noteLetter = snNL . nSN
 nl = noteLetter
-octave = snOct . nSN
-oct = octave
+--octave = snOct . nSN
+oct = snOct . nSN -- octave
 accidentals = runA . nAC
 acs = accidentals
 
