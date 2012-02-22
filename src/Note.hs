@@ -1,28 +1,25 @@
 module Note 
 ( Note
-, noteLetter
-, nl
+, noteLetter , nl
 --, octave
 , oct
-, accidentals
-, acs
+, accidentals , acs
 , midC
-, (-=-)
-, (->-)
-, (-<-)
-, (===)
-, (=>=)
-, (=<=)
-, sharp
-, flat
-, up
-, down
+, (-=-) , (->-) , (-<-)
+, (===) , (=>=) , (=<=)
+, sharp , flat
+, up , down
+, Duration, durToNum
+, whole, half, quarter, eight
+, brk, dot
+, DurationNote(..)
 ) where
 
 import Test.QuickCheck
 import Control.Monad
 import qualified Data.List as L
 import Maybe (fromJust)
+import Data.Ratio
 
 -- Ordered in octave numbering order.
 data NoteLetter = C | D | E | F | G | A | B deriving (Eq, Ord, Show, Enum)
@@ -142,7 +139,40 @@ testNote = do
 	f $ \n -> (flat . up $ n) === (up . flat $ n)
 	f $ \n -> (sharp . up $ n) === (up . sharp $ n)
 	f $ \n -> (flat . down $ n) === (down . flat $ n)
-	
+
+---- Duration and notes
+data Duration = W{- whole note -} | H Duration {- halve an existing duration -} | Dot Duration {- dot an existing duration -}
+	deriving (Show)
+instance Arbitrary Duration where
+	arbitrary = oneof [ return W
+										, liftM H arbitrary
+										, liftM Dot arbitrary
+										]
+instance Ord Duration where
+	a `compare` b = (durToNum a) `compare` (durToNum b)
+instance Eq Duration where
+	a == b = (durToNum a) == (durToNum b)
+-- the duration as a fraction of a whole note
+durToNum W = 1
+durToNum (H d) = durToNum d / 2
+durToNum (Dot d) = durToNum d + durToNum (H d)
+-- some common durations
+whole = W
+half = H whole
+quarter = H half
+eight = H quarter 
+-- create new durations
+brk = H
+dot = Dot
+
+testDuration = do
+	f $ \d -> durToNum (Dot (H d)) == durToNum (H (Dot d))
+	f $ \d -> (Dot (H d)) == (H (Dot d))
+	f $ \d -> (dot . brk $ d) == (brk . dot $ d)
+
+-- Notes with a duration
+data DurationNote = DN { note :: Note, dur :: Duration } deriving (Eq, Show)
+
 
 f :: Testable prop => prop -> IO ()
 f = quickCheckWith stdArgs { maxSuccess = 1000, maxDiscard = 5000 }
@@ -151,3 +181,4 @@ test = do
 	testStaffNote
 	testAccidental
 	testNote
+	testDuration
