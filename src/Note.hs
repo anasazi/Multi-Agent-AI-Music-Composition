@@ -59,10 +59,10 @@ snUpOct (SN n x) = SN n $ x+1
 snDownOct (SN n x) = SN n $ x-1
 
 testStaffNote = do
-	quickCheck $ \n -> (==n) . snUp . snDown $ n
-	quickCheck $ \n -> (==n) . snDown . snUp $ n
-	quickCheck $ \n -> (==n) . snUpOct . snDownOct $ n
-	quickCheck $ \n -> (==n) . snDownOct . snUpOct $ n
+	f $ \n -> (==n) . snUp . snDown $ n
+	f $ \n -> (==n) . snDown . snUp $ n
+	f $ \n -> (==n) . snUpOct . snDownOct $ n
+	f $ \n -> (==n) . snDownOct . snUpOct $ n
 
 -- Represents accidentals as number of half steps off basic note
 newtype Accidental = AC { runA :: Integer } deriving (Eq, Ord, Show)
@@ -74,8 +74,8 @@ acUp = AC . (+1) . runA
 acDown = AC . (+(-1)) . runA
 
 testAccidental = do
-	quickCheck $ \a -> (==a) . acUp . acDown $ a
-	quickCheck $ \a -> (==a) . acDown . acUp $ a
+	f $ \a -> (==a) . acUp . acDown $ a
+	f $ \a -> (==a) . acDown . acUp $ a
 
 -- A note is made up of a basic note and an accidental
 data Note = N StaffNote Accidental deriving (Eq, Ord) --, Show)
@@ -128,20 +128,24 @@ down n
 	| otherwise					= N (snDown . nSN $ n) (acUp . acUp . nAC $ n)
 
 testNote = do
-	quickCheck $ \n -> (==n) . sharp . flat $ n
-	quickCheck $ \n -> (==n) . flat . sharp $ n
-	quickCheck $ \n -> (==n) . up . down $ n
-	quickCheck $ \n -> (==n) . down . up $ n
-	quickCheck $ \n -> (-=-n) . sharp . flat $ n
-	quickCheck $ \n -> (-=-n) . up . down $ n
-	quickCheck $ \n -> (->-n) . up $ n
-	quickCheck $ \n -> (-<-n) . down $ n
-	quickCheck $ \n -> (=>=n) . sharp $ n
-	quickCheck $ \n -> (=<=n) . flat $ n
-	quickCheck $ \n -> (sharp . down $ n) === (down . sharp $ n)
-	quickCheck $ \n -> (flat . up $ n) === (up . flat $ n)
-	quickCheck $ \n -> (sharp . up $ n) === (up . sharp $ n)
-	quickCheck $ \n -> (flat . down $ n) === (down . flat $ n)
+	f $ \n -> (==n) . sharp . flat $ n
+	f $ \n -> (==n) . flat . sharp $ n
+	f $ \n -> (==n) . up . down $ n
+	f $ \n -> (==n) . down . up $ n
+	f $ \n -> (-=-n) . sharp . flat $ n
+	f $ \n -> (-=-n) . up . down $ n
+	f $ \n -> (->-n) . up $ n
+	f $ \n -> (-<-n) . down $ n
+	f $ \n -> (=>=n) . sharp $ n
+	f $ \n -> (=<=n) . flat $ n
+	f $ \n -> (sharp . down $ n) === (down . sharp $ n)
+	f $ \n -> (flat . up $ n) === (up . flat $ n)
+	f $ \n -> (sharp . up $ n) === (up . sharp $ n)
+	f $ \n -> (flat . down $ n) === (down . flat $ n)
+	
+
+f :: Testable prop => prop -> IO ()
+f = quickCheckWith stdArgs { maxSuccess = 1000, maxDiscard = 5000 }
 
 test = do
 	testStaffNote
