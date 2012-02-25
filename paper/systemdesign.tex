@@ -2,9 +2,25 @@
 
 talk about general blackboard system structure
 
+A Blackboard System is a way for distinct agents specializing in subproblems to communicate partial solutions and cooperate to find a complete solution.
+There are three components of a Blackboard System: the Blackboard, the Control, and the Knowledge Sources.
+Knowledge Sources are the specialized agents. They examine the Blackboard as input and write their partial solutions on the Blackboard.
+The Blackboard is a data structure shared by all the Knowledge Sources and presided over by the Control. It is essentially an open read and write area.
+The Control decides which Knowledge Sources run and when the problem has been solved.
+
+insert a diagram of a blackboard system here
+
 \subsection{Blackboard}
 
 talk about the specific blackboard used
+
+For this music composition system, the Blackboard contains two major items: the given musical line, the \emph{cantus firmus}, and the musical line in the progress of composition, the \emph{counterpoint}.
+The \emph{cantus firmus} is a read only list of notes along with a note-at-time lookup table for fast random access.
+The \emph{counterpoint} is also a list of notes, but Knowledge Sources are allowed to extend or modify it.
+Both provide a context-aware location reference (known as a Zipper) that makes it easier for Knowledge Sources and the Control to communicate about particular areas of a composition.
+The Blackboard also contains other minor, but important, information such as the key or mode of the composition. This is mainly for ease of reference.
+
+insert a diagram of the blackboard structure?
 
 \subsection{Control}
 
