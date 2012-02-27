@@ -2,10 +2,82 @@
 
 general overview of agents
 
+As mentioned before, there are two main types of agents: generators and testers.
+Generators extend or modify an existing counterpoint line to create a new partial composition.
+Testers examine a counterpoint line (usually at the current end) to see if it acceptable.
+Generators and testers work together through a feedback loop to create valid compositions.
+
+insert diagram of gen/test loop
+
+Agents can also be divided by the ruleset they help implement.
+For example, implementing florid counterpoint involves six rulesets: general rules, four sets of species specific rules, and species boundary rules.
+
+Regarding counterpoint, tester agents have another division: hard rules (mandatory) and soft rules (optional, but preferred).
+These rules were derived from the descriptions in ``Modal Counterpoint: Renaissance Style'' by Peter Schubert (add better citation later).
+
 \subsection{General Counterpoint Rules}
 
 agents for general counterpoint rules
+\paragraph{Generators}
+The counterpoint species determines the start and duration of a note, so there is no reasonable way to generate notes outside of the context of a species.
+Thus, no generator agents fall within the General Counterpoint Rules grouping.
+
+\paragraph{Testers}
+\subparagraph{Hard Rules}
+	\begin{enumerate}
+		\item Only use natural, no sharps or flats, notes. $B\flat$ may be used if it immediately follows above an $A$ or if it prevents a tritone.
+					If $B\flat$ appears in the mode of the \emph{cantus firmus}, then $E\flat$ may be used as $B\flat$ would be used otherwise (follow a $D$ or avoid a tritone) and $B$ may not be used.
+					Implementing this rule is straightforward. Examine the current note, the previous note, and the mode of the composition and test the condition.
+
+		\item No augmented or diminished skips. No skips larger than a sixth unless it is an octave.
+					Implementation involves checking the current and previous notes to build the interval and test it.
+
+		\item No outlines of augmented fourths. No outlines of diminished fifths unless completely filled in and followed by an opposite direction step.
+					An interval is outlined if the local high and low points of a line form that interval.
+					Implementation involves moving back from the current note to find the last complete segment with a low and a high, and then testing that interval.
+					Testing the segment ending in the current note does not serve much purpose because we don't know if it will be a local high or low yet. The exception is the last note of the composition.
+
+		\item The first and last notes of each part (\emph{cantus firmus} and counterpoint) must form a perfect consonant interval, i.e. a perfect unison, fifth, octave, or occasionaly a twelth.
+					This agent would simply return a test pass for interior notes.
+
+	\end{enumerate}
+\subparagraph{Soft Rules}
+	\begin{enumerate}
+		\item Use steps, movement to adjacent notes, more than skips, movement to non-adjacent notes. Specific ratios are usually determined by species, but the general agent would aim for a minimum rate.
+		
+		\item Avoid skips of a major sixth and descending minor sixths.
+
+		\item Precede or follow a skip by a step in the opposite direction. Examine the current note and the two preceding notes in order to check validity of the first preceding note.
+
+		\item Do not use more than two skips in sequence. Examine the current note and the three preceding notes to check if all three intervals are skips.
+
+		\item Two successive skips in the same direction should be small skips. A `small' interval is a fourth or smaller.
+
+		\item In a sequence of skips and steps in the same direction, larger intervals should be below smaller ones.
+					Move back from the current note, testing intervals along the way, while motion is in the same direction.
+
+		\item Do not skip both to and from a high or low point. This is a more specific version of soft rule 3 that focuses specifically on local highs and lows.
+					Scan back to the previous high or low and check if it is bounded by skips.
+
+		\item Accidental $B\flat$s, i.e. ones that occur when $B\flat$ is not in the mode, should be followed by descending motion.
+					Check if the previous note is a accidental $B\flat$. If so, check whether the current note descended from it.
+
+	\end{enumerate}
 
 \subsection{First Species Counterpoint Rules}
 
 agents for first species rules
+
+\paragraph{Generators}
+\paragraph{Testers}
+\subparagraph{Hard Rules}
+\subparagraph{Soft Rules}
+
+\subsection{Second Species Counterpoint Rules}
+coming soon!
+\subsection{Third Species Counterpoint Rules}
+coming soon!
+\subsection{Fourth Species Counterpoint Rules}
+coming soon!
+\subsection{Florid (Boundary) Counterpoint Rules}
+coming soon!
