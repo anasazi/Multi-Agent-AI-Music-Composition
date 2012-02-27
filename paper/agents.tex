@@ -90,7 +90,18 @@ The attached note will always be a whole note and will have at most one accident
 		\item Skips must be less than half of all melodic motions.
 					This agent scans back through the line and computes the skip to step ratio.
 
-		\item Direct repetition rule
+		\item Do not directly repeat a combination; sequential repitiions are limited to two. A combination is a subsequence (of both voices) at least two notes long.
+					Direct repetition involves exactly repeating this subsequence immediately; exact repetition is allowed if at least two whole notes of other material is between the repetitions.
+					Sequential repeition involves transposing, moving up or down, the combination and playing this transposition. 
+					The limit of two repetitions means this sequence can actually occur three times in a row (original and two repetitions).
+
+					There are two relevant sequences here: the sequence of vertical intervals and the sequence of motion interval pairs. 
+					Finding direct repetitions involves identifying a subsequence (across both sequences) involving the current note that is repeated elsewhere and checking that these repetitions are separated enough.
+					Finding sequential repetitions involves indentifying a repeated subsequence in the vertical intervals that corresponds to a one element shorter subsequence in the motion intervals with repetitions
+						separated by a parallel interval.
+
+					Since we only need to check how the most recently added note, which is the only untested note, changes things, we only need to check subsequences that end on the current note.
+					This makes the check quadratic instead of exponential.
 	\end{enumerate}
 \subparagraph{Soft Rules}
 
