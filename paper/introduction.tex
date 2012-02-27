@@ -1,35 +1,48 @@
 \section{Introduction}
 
-Algorithmic music composition has been a tool of composers for centuries.
-Some basic examples include using dice rolls to organize small musical phrases (cite Mozart "Musical Dice" [ACM paper]) or using a mapping from syllables to notes (cite Guido d'Azzero [ACM paper]).
-The advent of computers, specifically their great data processing and storage power, enabled both automation of algorithmic compositional techniques and increased complexity and sophistication of these techniques.
+%Algorithmic music composition has been a tool of composers for centuries.
+%Some basic examples include using dice rolls to organize small musical phrases (cite Mozart "Musical Dice" [ACM paper]) or using a mapping from syllables to notes (cite Guido d'Azzero [ACM paper]).
+%The advent of computers, specifically their great data processing and storage power, enabled both automation of algorithmic compositional techniques and increased complexity and sophistication of these techniques.
 
-Much of the initial use of computers for composition revolved around the Serialism musical paradigm, which uses sequences (typically numerical) to organize musical elements. (cite Serialism description, ACM paper)
-Early systems combined small musical elements like a larger scale version of the "Musical Dice" idea. (cite)
-Other systems interpreted various input sources, including random noise, number sequences, and datasets, as music using some sort of mapping algorithm, again extending pre-computer ideas. (cite)
-Computers mostly enabled larger scale versions of what was done before.
+%Much of the initial use of computers for composition revolved around the Serialism musical paradigm, which uses sequences (typically numerical) to organize musical elements. (cite Serialism description, ACM paper)
+%Early systems combined small musical elements like a larger scale version of the "Musical Dice" idea. (cite)
+%Other systems interpreted various input sources, including random noise, number sequences, and datasets, as music using some sort of mapping algorithm, again extending pre-computer ideas. (cite)
+%Computers mostly enabled larger scale versions of what was done before.
 
-Artificial Intelligence (AI) opened up the idea that computers could reason about more complex musical styles.
-Some systems learned a style from an already existing body of works (cite Cope's EMI and others).
-Others attempted to encode the rules of a formal model of a musical style and then reason using these rules (cite).
-Several non-AI techniques, particularly cellular automata and formal grammars, were also used. (cite)
-These systems all focused on a single technique to generate music.
-Each technique tended to excel in a narrow aspect of composition, while lacking in other key areas.
-For example, artificial neural networks are excellent for generating music in a learned style, but do not generate variations on phrases well. (cite)
-Formal grammars can prevent the construction of some undesirable musical properties, but can be repetitive or have problems with unaccounted for musical properties. (cite)
-Some of these systems also have problems with more subjective musical properties like tension or color and thus can sound artificial or fake.
+%Artificial Intelligence (AI) opened up the idea that computers could reason about more complex musical styles.
+%Some systems learned a style from an already existing body of works (cite Cope's EMI and others).
+%Others attempted to encode the rules of a formal model of a musical style and then reason using these rules (cite).
+%Several non-AI techniques, particularly cellular automata and formal grammars, were also used. (cite)
+%These systems all focused on a single technique to generate music.
+%Each technique tended to excel in a narrow aspect of composition, while lacking in other key areas.
+%For example, artificial neural networks are excellent for generating music in a learned style, but do not generate variations on phrases well. (cite)
+%Formal grammars can prevent the construction of some undesirable musical properties, but can be repetitive or have problems with unaccounted for musical properties. (cite)
+%Some of these systems also have problems with more subjective musical properties like tension or color and thus can sound artificial or fake.
 
-Multi-agent systems may provide a way around the weaknesses of single technique systems.
-Independent agents using different techniques can work together, exploiting each other's strengths and covering each other's weaknesses, to create a better composition than they would working alone.
-Existing work with multi-agent computer music targets musical performance (cite performance MA system paper) or bridges the gap between performance and composition (cite real-time MA paper).
-The later work is only partially computer generated as a human composer can control high level behavior during composition.
-This system uses a single controlling agent (a conductor) and several worker agents (performers).
-A worker agent is still using a single method of composing music, while the controller agent shifts emphasis around to highlight desirable sequences as worker agents generate them. 
-Instead of overcoming the weakness of a composition method, poor output is filtered away.
-This improves output by raising the quality of the worst piece instead of improving the quality of the best piece.
+%Multi-agent systems may provide a way around the weaknesses of single technique systems.
+%Independent agents using different techniques can work together, exploiting each other's strengths and covering each other's weaknesses, to create a better composition than they would working alone.
+%Existing work with multi-agent computer music targets musical performance (cite performance MA system paper) or bridges the gap between performance and composition (cite real-time MA paper).
+%The later work is only partially computer generated as a human composer can control high level behavior during composition.
+%This system uses a single controlling agent (a conductor) and several worker agents (performers).
+%A worker agent is still using a single method of composing music, while the controller agent shifts emphasis around to highlight desirable sequences as worker agents generate them. 
+%Instead of overcoming the weakness of a composition method, poor output is filtered away.
+%This improves output by raising the quality of the worst piece instead of improving the quality of the best piece.
 
-This work uses multi-agent systems in a different way. Basic agents may embody a particular rule of the musical style using a particular implementation technique.
-These agents interact and form a musical composition as their emergent behavior.
-This approach utilizes multiple compositional techniques to overcome the weaknesses of any particular technique.
-It also more easily adapted to other musical styles by adding or removing agents (i.e. different rule sets) and changing the relative importance of agents (i.e. strict rules versus guidelines).
-This system combines the existing compositional techniques in order to generate higher quality music while being structured in an adaptable and extensible fashion.
+%This work uses multi-agent systems in a different way. Basic agents may embody a particular rule of the musical style using a particular implementation technique.
+%These agents interact and form a musical composition as their emergent behavior.
+%This approach utilizes multiple compositional techniques to overcome the weaknesses of any particular technique.
+%It also more easily adapted to other musical styles by adding or removing agents (i.e. different rule sets) and changing the relative importance of agents (i.e. strict rules versus guidelines).
+%This system combines the existing compositional techniques in order to generate higher quality music while being structured in an adaptable and extensible fashion.
+
+This work describe a multi-agent system that composes music by embodying individual musical style rules in independent agents.
+The agents communicate and cooperate through a blackboard system to create a musical composition.
+Splitting style rules into agents this way allows for using multiple AI and compositional techiques to overcome weaknesses of using any particular technique alone
+	as well as allowing easy adaptation to other musical styles by adding or removing agents.
+This can result in higher quality music than that generated by single agent systems.
+
+Composition systems using a single technique tend to generate music that is weak in at least one aspect.
+By allowing an individual agent to use whatever techniques are appropriate for its subproblem, the collection of agents can build on each other's strengths and cover each other's weaknesses.
+Since all of the agents need to share the partial composition structure, a blackboard system is well suited for this system.
+To demonstrate how this system may be structured, we implemented Baroque era counterpoint.
+Counterpoint was originally designed for training students and is therefore a very structured and heavily documented musical style, which lends itself to this implementation method.
+Basic counterpoint involves creating a musical line, which satisfies a significant collection of restrictions and preferences, to run in parallel with a provided line.
