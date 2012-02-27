@@ -1,13 +1,15 @@
 \section{Agents}
 
-general overview of agents
-
 As mentioned before, there are two main types of agents: generators and testers.
 Generators extend or modify an existing counterpoint line to create a new partial composition.
 Testers examine a counterpoint line (usually at the current end) to see if it acceptable.
 Generators and testers work together through a feedback loop to create valid compositions.
 
-insert diagram of gen/test loop
+\begin{figure}[h]
+\caption{The generator and tester agent dynamic}
+\centering
+	\includegraphics[keepaspectratio=true]{generator-and-tester-dynamic.png}
+\end{figure}
 
 Agents can also be divided by the ruleset they help implement.
 For example, implementing florid counterpoint involves six rulesets: general rules, four sets of species specific rules, and species boundary rules.
@@ -17,7 +19,6 @@ These rules were derived from the descriptions in ``Modal Counterpoint: Renaissa
 
 \subsection{General Counterpoint Rules}
 
-agents for general counterpoint rules
 \paragraph{Generators}
 The counterpoint species determines the start and duration of a note, so there is no reasonable way to generate notes outside of the context of a species.
 Thus, no generator agents fall within the General Counterpoint Rules grouping.
