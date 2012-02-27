@@ -69,8 +69,29 @@ Thus, no generator agents fall within the General Counterpoint Rules grouping.
 agents for first species rules
 
 \paragraph{Generators}
+First species involves matching each note of the \emph{cantus firmus} with one simultaneous note of counterpoint. These are always whole notes.
+The first species generator attaches a randomly selected note from the two octaves either above or below the \emph{cantus firmus} (the two lines never cross) to the end of an existing composition.
+The attached note will always be a whole note and will have at most one accidental.
 \paragraph{Testers}
 \subparagraph{Hard Rules}
+	\begin{enumerate}
+		\item All downbeats, which in the case of first species is all beats, must be consonant with the \emph{cantus firmus}. 
+					Consonant intervals are unisons, thrids, fifths, sixths, octaves, and their compounds.
+					This agent just checks the current note with the corresponding note in the \emph{cantus firmus}.
+
+		\item Enter perfect intervals only by contrary motion, in which voices move in opposite directions, or oblique motion, in which one voice does not move.
+					If the current vertial interval is perfect, then the agent examines the motion from the previous notes in both voices.
+
+		\item If the \emph{cantus firmus} repeated a note, the counterpoint may not also repeat a note. This refers specifically to adjacent repeated notes.
+					An exception is that octave skips in the counterpoint are allowed if the \emph{cantus firmus} is stationary.
+
+		\item The counterpoint and the \emph{cantus firmus} can move in parallel (same intervals) for at most four notes. Because of rule 2, only thirds and sixths are allowed for parallel motion.
+
+		\item Skips must be less than half of all melodic motions.
+					This agent scans back through the line and computes the skip to step ratio.
+
+		\item Direct repetition rule
+	\end{enumerate}
 \subparagraph{Soft Rules}
 
 \subsection{Second Species Counterpoint Rules}
