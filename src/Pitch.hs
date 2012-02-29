@@ -7,8 +7,8 @@ module Pitch
 , midC
 ) where
 
+import Letter (Letter(..))
 import qualified StaffPoint as SP
-import StaffPoint (NoteLetter(..))
 
 import Test.QuickCheck
 import Control.Monad
@@ -54,8 +54,7 @@ down p = let x = sharp . uncurry P . (SP.down . point &&& off) $ p in
 
 qc = quickCheckWith stdArgs { maxSuccess = 500, maxDiscard = 2500 }
 
-test = do
-  SP.test
+test = SP.test >> putStrLn "Pitch.hs tests" >> do
   qc $ uncurry (==) . (sharp . flat &&& id) 
   qc $ uncurry (==) . (flat . sharp &&& id)
   qc $ uncurry (==) . (up . down &&& id)
