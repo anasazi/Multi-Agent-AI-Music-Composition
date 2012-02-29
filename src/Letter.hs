@@ -1,6 +1,7 @@
 module Letter
 ( Letter(..)
 , succL, predL
+, test
 ) where
 
 import Test.QuickCheck
@@ -16,8 +17,12 @@ instance Ord Letter where
 instance Arbitrary Letter where
 	arbitrary = elements [ A, B, C, D, E, F, G ]
 
-succL B = C
+succL G = A
 succL x = succ x
 
-predL C = B
+predL A = G
 predL x = pred x
+
+test = do
+	putStrLn "Letter.hs tests"
+	quickCheck $ \x -> x == (succL . predL $ x)
