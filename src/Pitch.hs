@@ -5,6 +5,7 @@ module Pitch
 , sharp, flat
 , up, down
 , midC
+, test
 ) where
 
 import Letter (Letter(..))
