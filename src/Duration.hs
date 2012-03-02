@@ -37,6 +37,7 @@ quarter = D 2 0
 eighth = D 3 0
 
 test = do
+	putStrLn "Duration.hs tests"
 	quickCheck $ (>0) . dur
 	quickCheck $ uncurry (<) <<< halve &&& id
 	quickCheck $ uncurry (>) <<< dot &&& id
