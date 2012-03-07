@@ -1,176 +1,158 @@
 module Interval
-( Quality(..)
-, Size
-, HalfStep
-, Interval
-, size
-, width
+( Interval, lspan, width
+, Quality(..)
 , quality
+, simple, compound
+, perfectSpec, minmajSpec
 , invert
-, (#^)
-, (#.)
+, simplify
+, shorten, lengthen
+, shrink, grow
+, (##)
+, (#^), (#.)
 , (#)
-, ($=$) , ($>$) , ($<$)
-, (\=/) , (\>/) , (\</)
-, unison, min2, maj2, min3, maj3, perf4, aug4, dim5, perf5, min6, maj6, min7, maj7, octave
+, unison, min2, maj2, min3, maj3, perf4, perf5, min6, maj6, min7, maj7, octave
+, test
 ) where
 
-import Test.QuickCheck
+import qualified Pitch as P
+
+import Test.QuickCheck hiding (shrink)
 import Control.Monad
-import Note
-import Maybe (fromJust)
+import Control.Arrow
+import Data.Function (on)
 
-data Quality = Dim | Min | Perf | Maj | Aug deriving (Eq, Ord, {-Show,-} Enum)
-instance Show Quality where
-	show Dim = "o"
-	show Min = "m"
-	show Perf = "P"
-	show Maj = "M"
-	show Aug = "+"
-instance Arbitrary Quality where
-	arbitrary = elements [ Dim .. Aug ]
-invQ :: Quality -> Quality
-invQ = toEnum . (4-) . fromEnum
+data Interval = I { lspan :: Integer, width :: Integer }
+  deriving  (Eq, Ord) --) -- notational equality and ordering
 
--- Number of letters from bottom to top inclusive (a unison is 1 letter span).
-data LetterSpan = L1 | L2 | L3 | L4 | L5 | L6 | L7 | L8
-	deriving (Eq, Ord, {-Show,-} Enum)
-instance Show LetterSpan where
-	show = show . (+1) . fromEnum
-instance Arbitrary LetterSpan where
-	arbitrary = elements [ L1 .. ]
-invLS :: LetterSpan -> LetterSpan
-invLS = fromJust . (flip lookup $ zip [L1,L2,L3,L4,L5,L6,L7,L8] [L8,L7,L6,L5,L4,L3,L2,L1])
-
-type Size = Integer
-type HalfStep = Integer
-
--- In this scheme an octave is denoted as C (S L1 Perf)
-data Interval = S LetterSpan Quality -- A interval less than an octave
-							| C Interval -- An interval extended by an octave
-		deriving (Eq{-, Show-})
 instance Show Interval where
-	show (S ls q) = show q ++ show ls
-	show (C i) = "*" ++ show i--show (quality i) ++ show (7 + size i) ++ "(*" ++ show i ++ ")"
+  show = quality &&& lspan >>> show *** show >>> uncurry (++)
+
 instance Arbitrary Interval where
-	arbitrary = oneof [ liftM2 S arbitrary arbitrary `suchThat` isValid
-										, liftM C (arbitrary `suchThat` (\i -> size i > 1))
-										]
-		where isValid (S ls q)
-						| ls == L1 = q `elem` [Perf, Aug]
-						| ls `elem` [L4,L5,L8] = q `elem` [Dim,Perf,Aug]
-						| otherwise = q `elem` [Dim,Min,Maj,Aug]
+  arbitrary = liftM2 I (arbitrary `suchThat` (>=1)) (arbitrary `suchThat` (>=0))
 
-isSimple (S _ _) = True
-isSimple _ = False
--- Return the size (letter span) as an number
-size :: Interval -> Size
-size (S ls _) = (1+) . fromIntegral . fromEnum $ ls
-size (C i)		= (7+) . size $ i
--- Return the width (half steps)
-width :: Interval -> HalfStep
-width (S ls q) = base + mod
-	where
-	base = fromJust . lookup ls $ zip [ L1 .. ] [ 0,2,4,5,7,9,11,12 ]
-	mod
-		| ls == L1							= case q of Perf -> 0; Aug -> 1
-		| ls == L8							= case q of Dim -> (-1); Perf -> 0; Aug -> 1
-		| ls `elem` [L4,L5]			= case q of Dim -> (-1); Perf -> 0; Aug -> 1
-		| otherwise							= case q of Dim -> (-2); Min -> (-1); Maj -> 0; Aug -> 1
-width (C i) = (12+) . width $ i
--- Return the quality
+-- quality values
+data Quality = Dim Integer | Minor | Perfect | Major | Aug Integer
+  deriving Eq
+
+instance Show Quality where
+  show Minor = "m"
+  show Perfect = "P"
+  show Major = "M"
+  show (Dim n) = show n ++ "o"
+  show (Aug n) = show n ++ "+"
+-- NOTE quality is technically a poset, how do i implement that
+
+-- accessor
 quality :: Interval -> Quality
-quality (S _ q) = q
-quality (C i) = quality i
--- Generate the inversion of the interval
+quality i | compound i    = quality (simplify i)
+          | perfectSpec i = let base = case lspan i of 1 -> 0; 4 -> 5; 5 -> 7; 8 -> 12
+                                diff = width i - base
+                                q | diff == 0 = Perfect
+                                  | diff <  0 = Dim (negate diff)
+                                  | diff >  0 = Aug diff
+                            in q
+          | minmajSpec i  = let base = case lspan i of 2 -> 2; 3 -> 4; 6 -> 9; 7 -> 11
+                                diff = width i - base
+                                q | diff == 0     = Major
+                                  | diff == (-1)  = Minor
+                                  | diff >  0     = Aug diff
+                                  | diff <  (-1)  = Dim (negate diff - 1)
+                            in q
+
+
+-- predicates
+simple, compound :: Interval -> Bool
+simple = lspan &&& width >>> (<=8) *** (<=12) >>> uncurry (&&)
+compound = not . simple
+
+perfectSpec, minmajSpec :: Interval -> Bool
+perfectSpec = (`elem`[1,4,5]) . (`mod`7) . lspan
+minmajSpec = (`elem`[2,3,6,0]) . (`mod`7) . lspan
+
+-- unary operators
 invert :: Interval -> Interval
-invert (S ls q) = S (invLS ls) (invQ q)
-invert (C i) = invert i
--- Apply the interval upwards
-(#^) :: Interval -> Note -> Note
-i@(S _ _) #^ n = raisePitch . raiseLetter $ n
-	where
-	raiseLetter = foldl (.) id (replicate (fromInteger . subtract 1 . size $ i) up)
-	raisePitch = foldl (.) id (replicate (fromInteger . width $ i) sharp)
-i@(C si) #^ n = raiseOctave (si #^ n)
-	where raiseOctave = foldl (.) id (replicate 12 sharp) . foldl (.) id (replicate 7 up)
--- Apply the interval downwards
-(#.) :: Interval -> Note -> Note
-i@(S _ _) #. n = lowerPitch . lowerLetter $ n
-	where
-	lowerLetter = foldl (.) id (replicate (fromInteger . subtract 1 . size $ i) down)
-	lowerPitch = foldl (.) id (replicate (fromInteger . width $ i) flat)
-i@(C si) #. n = lowerOctave (si #. n)
-	where lowerOctave = foldl (.) id (replicate 12 flat) . foldl (.) id (replicate 7 down)
--- Make an interval from two notes
---(#) :: Note -> Note -> Interval
-a # b | size <= 8 = S ls q | otherwise = C ((octave #^ bot) # top)
-	where
-	-- positional ordering
-	bot | a -<- b = a | otherwise = b
-	top | bot == a = b | otherwise = a
-	-- acoustical ordering
-	low | a =<= b = a | otherwise = b
-	high | low == a = b | otherwise = a
-	-- find the letter span by stepping up until location equality
-	size | a -=- b = 0
-			 | otherwise = length . takeWhile (not . (-=-top)) $ iterate up bot
-	ls = toEnum (size `mod` 8) :: LetterSpan
-	-- find the width by sharping until enharmonic equality
-	width = length . takeWhile (not . (===high)) $ iterate sharp low
-	width' = width `mod` 12
-	-- derive quality form size and width
-	base = fromJust $ lookup ls $ zip [ L1 .. ] [ 0,2,4,5,6,9,11,0 ]
-	q | ls == L1					= case width' - base of 0 -> Perf; 1 -> Aug
-		| ls == L8					= case width' - base of 11 -> Dim; 0 -> Perf; 1 -> Aug--(-1) -> Dim; 0 -> Perf
-		| ls `elem` [L4,L5]	= case width' - base of (-1) -> Dim; 0 -> Perf; 1 -> Aug
-		| otherwise					= case width' - base of (-2) -> Dim; (-1) -> Min; 0 -> Maj; 1 -> Aug
+invert i 
+  | simple i = (lspan &&& width >>> (9-) *** (12-) >>> uncurry I) i
+  | otherwise = invert (simplify i)
 
--- Size equality and ordering
-a $=$ b = size a == size b
-a $>$ b = size a >  size b
-a $<$ b = size a <  size b
+simplify :: Interval -> Interval
+simplify i 
+  | simple i = i
+  | otherwise = (lspan &&& width >>> (+1) . (`mod`7) . subtract 1 *** (`mod`12) >>> uncurry I) i
 
--- Width equality and ordering
-a \=/ b = width a == width b
-a \>/ b = width a >  width b
-a \</ b = width a <  width b
+	-- manipulators
+		-- shorten / lengthen = dec/inc width
+		-- shrink / grow = dec/inc lspan
+shorten = lspan &&& width >>> second (subtract 1) >>> uncurry I
+lengthen = lspan &&& width >>> second (+1) >>> uncurry I
 
------ COMMON INTERVALS -----
-unison = S L1 Perf
-min2 = S L2 Min
-maj2 = S L2 Maj
-min3 = S L3 Min
-maj3 = S L3 Maj
-perf4 = S L4 Perf
-aug4 = S L4 Aug
-dim5 = S L5 Dim
-perf5 = S L5 Perf
-min6 = S L6 Min
-maj6 = S L6 Maj
-min7 = S L7 Min
-maj7 = S L7 Maj
-octave = S L8 Perf
+shrink = lspan &&& width >>> first (subtract 1) >>> uncurry I
+grow = lspan &&& width >>> first (+1) >>> uncurry I
 
+-- binary operators
+  -- compose
+(##) :: Interval -> Interval -> Interval
+a ## b = I (lspan a + lspan b - 1) (width a + width b)
 
+(#^), (#.) :: Interval -> P.Pitch -> P.Pitch
+  -- apply up
+a #^ b = (lspan &&& width >>> fromInteger . subtract 1 *** fromInteger >>> flip (!!) *** flip (!!) >>> ($(iterate (P.up.) id)) *** ($(iterate (P.sharp.) id)) >>> uncurry (.) $ a) b
+  -- apply down
+a #. b = (lspan &&& width >>> fromInteger . subtract 1 *** fromInteger >>> flip (!!) *** flip (!!) >>> ($(iterate (P.down.) id)) *** ($(iterate (P.flat.) id)) >>> uncurry (.) $ a) b
 
-f :: Testable prop => prop -> IO ()
-f = quickCheckWith stdArgs { maxSuccess = 1000, maxDiscard = 5000 }
+-- NOTE slow on *very* large intervals (thus not very important)
+(#) :: P.Pitch -> P.Pitch -> Interval
+  -- build
+a # b = I lspan width
+  where
+  -- harmonic ordering
+  low   | a <= b    = a | otherwise = b
+  high  | low == a  = b | otherwise = a
+  -- spatial ordering
+  bot   | ((<=) `on` P.point) a b = a | otherwise = b
+  top   | bot == a                = b | otherwise = a
+  -- find the letter span
+  lspan = fromIntegral $ 1 + length (takeWhile (((/=) `on` P.point) top) $ iterate P.up bot)
+  -- find the width
+  width = fromIntegral $ length (takeWhile ((/=) high) $ iterate P.sharp low)
+
+-- common intervals
+unison = I 1 0
+min2 = I 2 1
+maj2 = I 2 2
+min3 = I 3 3
+maj3 = I 3 4
+perf4 = I 4 5
+perf5 = I 5 7
+min6 = I 6 8
+maj6 = I 6 9
+min7 = I 7 10
+maj7 = I 7 11
+octave = I 8 12
+
+-- tests
+qc :: Testable prop => prop -> IO ()
+qc = quickCheckWith stdArgs { maxSuccess = 500, maxDiscard = 2500 }
+
+swap (a,b) = (b,a)
+
+valid = lspan &&& width >>> (>0) *** (>=0) >>> uncurry (&&)
 
 test = do
-	f $ \q -> (==q) . invQ . invQ $ q
-	f $ \ld -> (==ld) . invLS . invLS $ ld
-	f $ \i -> isSimple i ==> (==i) . invert . invert $ i
-	f $ \i -> isSimple . invert $ i
-	f $ \i -> (/=i) . invert $ i
-	f $ \i -> (>=0) . width $ i
-	f $ \i n -> (==n) . (i#.) . (i#^) $ n
-	f $ \i n -> (==n) . (i#^) . (i#.) $ n
-	f $ \i n -> (<=4) . accidentals . (i#^) $ n
-	f $ \i n -> (>=(-4)) . accidentals . (i#^) $ n
-	f $ \i n -> (<=4) . accidentals . (i#.) $ n
-	f $ \i n -> (>=(-4)) . accidentals . (i#.) $ n
-	f $ \i -> (>0) . size $ i
-	f $ \i -> isSimple i ==> (<9) . size $ i
-	f $ \i -> not (isSimple i) ==> let (C i') = i in size i' > 1
-
+  P.test
+  putStrLn "Interval.hs tests"
+  qc $ uncurry (/=) <<< perfectSpec &&& minmajSpec -- every interval is on exactly one spectrum
+  qc $ uncurry (==) <<< invert . invert &&& id <<< simplify -- invert is inverse on simples
+  qc $ simple . invert -- all inverses are simple
+  qc $ simple . simplify -- simplify only produces simple intervals
+  qc $ first ( (#.) &&& (#^) >>> uncurry (.) ) >>> uncurry ($) &&& snd >>> uncurry (==) -- changing the direction of application is the inverse
+  qc $ first ( (#.) *** (#^) >>> uncurry (.) &&& uncurry (.) . swap ) >>> (\((a,a'),b) -> (a b, a' b)) >>> uncurry (==) -- different direction application is commutative
+  qc $ first ( (#.) *** (#.) >>> uncurry (.) &&& uncurry (.) . swap ) >>> (\((a,a'),b) -> (a b, a' b)) >>> uncurry (==) -- application down is commutative
+  qc $ first ( (#^) *** (#^) >>> uncurry (.) &&& uncurry (.) . swap ) >>> (\((a,a'),b) -> (a b, a' b)) >>> uncurry (==) -- application up is commutative
+  qc $ first ( uncurry (##) &&& (swap >>> uncurry (##)) ) >>> (\((a,a'),b) -> (a #^ b, a'#^ b)) >>> uncurry (==) -- composition is commutative
+  qc $ valid
+  qc $ valid . invert
+  qc $ valid . simplify
+  qc $ valid . uncurry (##)
+  quickCheckWith stdArgs { maxSuccess = 50 } $ valid . uncurry (#) -- takes a long time because the tester generates notes very far apart so we need to build *very* large intervals (on the order of 100s).
