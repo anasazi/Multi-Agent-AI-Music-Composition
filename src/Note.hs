@@ -1,184 +1,49 @@
-module Note 
+module Note
 ( Note
-, noteLetter , nl
---, octave
-, oct
-, accidentals , acs
 , midC
-, (-=-) , (->-) , (-<-)
-, (===) , (=>=) , (=<=)
-, sharp , flat
-, up , down
-, Duration, durToNum
-, whole, half, quarter, eight
-, brk, dot
-, DurationNote(..)
+, halve, dot
+, sharp, flat
+, up, down
+, pitch, dur
+, test
 ) where
 
 import Test.QuickCheck
 import Control.Monad
-import qualified Data.List as L
-import Maybe (fromJust)
-import Data.Ratio
+import Control.Arrow
 
--- Ordered in octave numbering order.
-data NoteLetter = C | D | E | F | G | A | B deriving (Eq, Ord, Show, Enum)
-{-
-instance Enum NoteLetter where
-	fromEnum = fromJust . (flip lookup $ zip [C,D,E,F,G,A,B] [0..])
-	toEnum = fromJust . (flip lookup $ zip [0..] [C,D,E,F,G,A,B]) . (`mod`7)
-instance Bounded NoteLetter where
-	minBound = C
-	maxBound = B
--}
+import qualified Pitch as P
+import qualified Duration as D
 
-instance Arbitrary NoteLetter where
-	arbitrary = elements [ C .. B ]
-
-type Octave = Integer
-
--- Represents a basic note on the staff
-data StaffNote = SN { snNL :: NoteLetter, snOct :: Octave } deriving (Eq, Show)
-
-instance Arbitrary StaffNote where
-	arbitrary = liftM2 SN arbitrary arbitrary
-
-instance Ord StaffNote where
-	a <= b =  snOct a < snOct b || snOct a == snOct b && snNL a <= snNL b
-
-snUp (SN B x) = SN C $ x+1
-snUp (SN n x) = SN (succ n) x
-
-snDown (SN C x) = SN B $ x-1
-snDown (SN n x) = SN (pred n) x
-
-snUpOct (SN n x) = SN n $ x+1
-snDownOct (SN n x) = SN n $ x-1
-
-testStaffNote = do
-	f $ \n -> (==n) . snUp . snDown $ n
-	f $ \n -> (==n) . snDown . snUp $ n
-	f $ \n -> (==n) . snUpOct . snDownOct $ n
-	f $ \n -> (==n) . snDownOct . snUpOct $ n
-
--- Represents accidentals as number of half steps off basic note
-newtype Accidental = AC { runA :: Integer } deriving (Eq, Ord, Show)
-
-instance Arbitrary Accidental where
-	arbitrary = liftM AC (arbitrary `suchThat` \x -> x <= 1 && x >= (-1))
-
-acUp = AC . (+1) . runA
-acDown = AC . (+(-1)) . runA
-
-testAccidental = do
-	f $ \a -> (==a) . acUp . acDown $ a
-	f $ \a -> (==a) . acDown . acUp $ a
-
--- A note is made up of a basic note and an accidental
-data Note = N StaffNote Accidental deriving (Eq, Ord) --, Show)
+data Note = N { pitch :: P.Pitch, dur :: D.Duration }
+	deriving (Eq, Ord)
 
 instance Show Note where
-	show (N (SN n o) (AC a)) = show n ++ show o ++ sign ++ show (abs a)
-		where sign | a < 0 = "-" | otherwise = "+"
-
--- convenience functions
-nSN (N x _) = x
-nAC (N _ x) = x
+	show = pitch &&& dur >>> show *** show >>> second ('@':) >>> uncurry (++)
 
 instance Arbitrary Note where
 	arbitrary = liftM2 N arbitrary arbitrary
 
--- provided so that a user can examine the traits of a note
-noteLetter = snNL . nSN
-nl = noteLetter
---octave = snOct . nSN
-oct = snOct . nSN -- octave
-accidentals = runA . nAC
-acs = accidentals
+-- a middle C whole note
+midC = N P.midC D.whole
 
--- Provided so that a user can generate more notes
-midC = N (SN C 4) (AC 0)
+durOp f = pitch &&& dur >>> second f >>> uncurry N
+pitchOp f = pitch &&& dur >>> first f >>> uncurry N
 
--- Staff Location Equality and Ordering
-a -=- b = (nSN a) == (nSN b)
-a ->- b = (==GT) $ compare (nSN a) (nSN b)
-a -<- b = (==LT) $ compare (nSN a) (nSN b)
+-- lifted duration ops
+halve = durOp D.halve
+dot = durOp D.dot
 
--- Notational Equality and Ordering, this is just the Eq or Ord instances of Note
+-- lifted pitch ops
+sharp = pitchOp P.sharp
+flat = pitchOp P.flat
+up =  pitchOp P.up
+down = pitchOp P.down
 
--- Enharmonic Equality and Ordering
-a === b | a -=- b = a == b | a -<- b = up a === b | a ->- b = a === up b
-a =>= b | a -=- b = a > b  | a -<- b = up a =>= b | a ->- b = a =>= up b
-a =<= b | a -=- b = a < b  | a -<- b = up a =<= b | a ->- b = a =<= up b
-
--- Change the pitch but not the basic note by modifying accidentals
-sharp n = N (nSN n) (acUp . nAC $ n)
-flat n = N (nSN n) (acDown . nAC $ n)
-
--- Change the basic note but not the pitch by counterbalencing with accidentals
-up n
-	| nl n `elem` [B,E] = N (snUp . nSN $ n) (acDown . nAC $ n)
-	| otherwise					= N (snUp . nSN $ n) (acDown . acDown . nAC $ n)
-
-down n
-	| nl n `elem` [C,F] = N (snDown . nSN $ n) (acUp . nAC $ n)
-	| otherwise					= N (snDown . nSN $ n) (acUp . acUp . nAC $ n)
-
-testNote = do
-	f $ \n -> (==n) . sharp . flat $ n
-	f $ \n -> (==n) . flat . sharp $ n
-	f $ \n -> (==n) . up . down $ n
-	f $ \n -> (==n) . down . up $ n
-	f $ \n -> (-=-n) . sharp . flat $ n
-	f $ \n -> (-=-n) . up . down $ n
-	f $ \n -> (->-n) . up $ n
-	f $ \n -> (-<-n) . down $ n
-	f $ \n -> (=>=n) . sharp $ n
-	f $ \n -> (=<=n) . flat $ n
-	f $ \n -> (sharp . down $ n) === (down . sharp $ n)
-	f $ \n -> (flat . up $ n) === (up . flat $ n)
-	f $ \n -> (sharp . up $ n) === (up . sharp $ n)
-	f $ \n -> (flat . down $ n) === (down . flat $ n)
-
----- Duration and notes
-data Duration = W{- whole note -} | H Duration {- halve an existing duration -} | Dot Duration {- dot an existing duration -}
-	deriving (Show)
-instance Arbitrary Duration where
-	arbitrary = oneof [ return W
-										, liftM H arbitrary
-										, liftM Dot arbitrary
-										]
-instance Ord Duration where
-	a `compare` b = (durToNum a) `compare` (durToNum b)
-instance Eq Duration where
-	a == b = (durToNum a) == (durToNum b)
--- the duration as a fraction of a whole note
-durToNum W = 1
-durToNum (H d) = durToNum d / 2
-durToNum (Dot d) = durToNum d + durToNum (H d)
--- some common durations
-whole = W
-half = H whole
-quarter = H half
-eight = H quarter 
--- create new durations
-brk = H
-dot = Dot
-
-testDuration = do
-	f $ \d -> durToNum (Dot (H d)) == durToNum (H (Dot d))
-	f $ \d -> (Dot (H d)) == (H (Dot d))
-	f $ \d -> (dot . brk $ d) == (brk . dot $ d)
-
--- Notes with a duration
-data DurationNote = DN { note :: Note, dur :: Duration } deriving (Eq, Show)
-
-
-f :: Testable prop => prop -> IO ()
-f = quickCheckWith stdArgs { maxSuccess = 1000, maxDiscard = 5000 }
+-- causes monomorphism restriction error until used
+--qc = quickCheckWith stdArgs { maxSuccess = 500, maxDiscard = 2500 }
 
 test = do
-	testStaffNote
-	testAccidental
-	testNote
-	testDuration
+	D.test
+	P.test
+	putStrLn "No real Note.hs tests"

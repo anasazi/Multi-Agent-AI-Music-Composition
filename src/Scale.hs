@@ -14,7 +14,7 @@ module Scale
 ) where
 
 import Interval
-import Note
+import Pitch
 import qualified Data.List as L
 
 data Scale = S [Interval] deriving (Eq{-, Show-})
@@ -22,7 +22,7 @@ instance Show Scale where
 	show (S is) = show is
 makeScale = S
 
-newtype BasedScale = BS { runBS :: (Scale, Note) } deriving (Eq)
+newtype BasedScale = BS { runBS :: (Scale, Pitch) } deriving (Eq)
 instance Show BasedScale where
 	show (BS (sc,bn)) = show sc ++ "@" ++ show bn
 baseScale = curry BS
@@ -69,7 +69,7 @@ melmin = melodicMinor
 ionian = makeScale [ unison, maj2, maj3, perf4, perf5, maj6, maj7, octave ]
 dorian = makeScale [ unison, maj2, min3, perf4, perf5, maj6, min7, octave ]
 phrygian = makeScale [ unison, min2, min3, perf4, perf5, min6, min7, octave ]
-lydian = makeScale [ unison, maj2, maj3, aug4, perf5, maj6, maj7, octave ]
+lydian = makeScale [ unison, maj2, maj3, lengthen perf4{-aug4-}, perf5, maj6, maj7, octave ]
 mixolydian = makeScale [ unison, maj2, maj3, perf4, perf5, maj6, min7, octave ]
 aeolian = makeScale [ unison, maj2, min3, perf4, perf5, min6, min7, octave ]
-locrian = makeScale [ unison, min2, min3, perf4, dim5, min6, min7, octave ]
+locrian = makeScale [ unison, min2, min3, perf4, shorten perf5{-dim5-}, min6, min7, octave ]
