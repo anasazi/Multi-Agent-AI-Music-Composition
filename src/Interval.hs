@@ -1,5 +1,15 @@
-odule Interval
-(
+module Interval
+( Interval, lspan, width
+, Quality(..)
+, quality
+, simple, compound
+, perfectSpec, minmajSpec
+, invert
+, simplify
+, (##)
+, (#^), (#.)
+, (#)
+, test
 ) where
 
 import qualified Pitch as P
