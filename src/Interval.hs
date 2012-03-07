@@ -6,6 +6,8 @@ module Interval
 , perfectSpec, minmajSpec
 , invert
 , simplify
+, shorten, lengthen
+, shrink, grow
 , (##)
 , (#^), (#.)
 , (#)
@@ -15,7 +17,7 @@ module Interval
 
 import qualified Pitch as P
 
-import Test.QuickCheck
+import Test.QuickCheck hiding (shrink)
 import Control.Monad
 import Control.Arrow
 import Data.Function (on)
@@ -78,6 +80,15 @@ simplify :: Interval -> Interval
 simplify i 
   | simple i = i
   | otherwise = (lspan &&& width >>> (+1) . (`mod`7) . subtract 1 *** (`mod`12) >>> uncurry I) i
+
+	-- manipulators
+		-- shorten / lengthen = dec/inc width
+		-- shrink / grow = dec/inc lspan
+shorten = lspan &&& width >>> second (subtract 1) >>> uncurry I
+lengthen = lspan &&& width >>> second (+1) >>> uncurry I
+
+shrink = lspan &&& width >>> first (subtract 1) >>> uncurry I
+grow = lspan &&& width >>> first (+1) >>> uncurry I
 
 -- binary operators
   -- compose
