@@ -9,6 +9,7 @@ module Interval
 , (##)
 , (#^), (#.)
 , (#)
+, unison, min2, maj2, min3, maj3, perf4, perf5, min6, maj6, min7, maj7, octave
 , test
 ) where
 
@@ -104,6 +105,20 @@ a # b = I lspan width
   lspan = fromIntegral $ 1 + length (takeWhile (((/=) `on` P.point) top) $ iterate P.up bot)
   -- find the width
   width = fromIntegral $ length (takeWhile ((/=) high) $ iterate P.sharp low)
+
+-- common intervals
+unison = I 1 0
+min2 = I 2 1
+maj2 = I 2 2
+min3 = I 3 3
+maj3 = I 3 4
+perf4 = I 4 5
+perf5 = I 5 7
+min6 = I 6 8
+maj6 = I 6 9
+min7 = I 7 10
+maj7 = I 7 11
+octave = I 8 12
 
 -- tests
 qc :: Testable prop => prop -> IO ()
