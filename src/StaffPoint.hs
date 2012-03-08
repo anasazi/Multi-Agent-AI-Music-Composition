@@ -16,32 +16,34 @@ import qualified Letter
 
 type OctaveNum = Integer
 
-data StaffPoint = SP { letter :: Letter, octnum :: OctaveNum }
+newtype StaffPoint = SP { runSP :: ( Letter, OctaveNum ) }
   deriving Eq
 
+letter = fst . runSP
+octnum = snd . runSP
+
 instance Arbitrary StaffPoint where
-  arbitrary = liftM2 SP arbitrary arbitrary
+  arbitrary = liftM2 (curry SP) arbitrary arbitrary
 
 instance Show StaffPoint where
-  show (SP l o) = show l ++ show o
-  --show = uncurry (++) . (letter &&& octnum >>> show *** show)
+  show = runSP >>> show *** show >>> uncurry (++)
+
+swap (a,b) = (b,a)
 
 instance Ord StaffPoint where
-  compare a b = let x = (compare `on` octnum) a b in if x /= EQ then x else (compare `on` letter) a b
+  compare = compare `on` (swap . runSP)
 
-toPair = letter &&& octnum
+midC = SP (C,4)
 
-midC = SP C 4
+type SPUnary = StaffPoint -> StaffPoint
 
-up = uncurry SP . (nextL &&& (toPair >>> first (==B) >>> opOct))
-  where 
-  nextL = letter >>> succL
-  opOct p = snd p + (if fst p then 1 else 0)
+-- go up one
+up :: SPUnary
+up = runSP >>> (\(l,o) -> if l == B then (B,o+1) else (l,o)) >>> first succL >>> SP
 
-down = uncurry SP . (prevL &&& (toPair >>> first (==C) >>> opOct))
-  where
-  prevL = letter >>> predL
-  opOct p = snd p - (if fst p then 1 else 0)
+-- go down one
+down :: SPUnary
+down = runSP >>> (\(l,o) -> if l == C then (C,o-1) else (l,o)) >>> first predL >>> SP
 
 qc = quickCheckWith stdArgs { maxSuccess = 500, maxDiscard = 2500 }
 
@@ -52,3 +54,4 @@ test = do
   qc $ uncurry (==) . (down . up &&& id)
   qc $ uncurry (>) . (up &&& id)
   qc $ uncurry (<) . (down &&& id)
+  qc $ uncurry (==) . (id &&& (letter &&& octnum >>> SP))
