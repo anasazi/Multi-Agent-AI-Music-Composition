@@ -1,10 +1,11 @@
 module Voice
-(
+( Voice, VoiceZipper
+, startTimeOfFocus, durationOfFocus
 ) where
 
-import Control.Arrow
-
-import Note -- the main thing we'll be using
+import Note 
+import Zipper
+import qualified Duration as D
 
 {- At its core, a musical voice is a sequence of notes.
 If we assume that the notes don't overlap, then we can map R+ to the voice. This is useful for lookup.
@@ -14,37 +15,15 @@ For efficiency, we probably want to keep the start time of a note instead of rec
 
 -}
 
--- TODO change to use newtypes so that we'll be able to enforce read only on the cantus firmus.
-
 -- first element of the list is the first note
 type Voice = [ Note ]
 
-type VoiceZipper = ( Voice, Voice ) -- the sub voice and the reversed prefix
- 
---- basic movement
-forward, back :: VoiceZipper -> Maybe VoiceZipper
+type VoiceZipper = Zipper Note
 
-forward ( [], _ ) = Nothing
-forward ( (n:ns) , prefix ) = Just ( ns, n : prefix )
+-- TODO instead of a straight up list of notes, maybe we should tag them with start times
 
-back ( _, [] ) = Nothing
-back ( ns, (p:ps) ) = Just ( p : ns, ps )
+startTimeOfFocus :: VoiceZipper -> Double
+startTimeOfFocus = sum . map (D.dur . dur) . context
 
---- move to edge
-start, end :: VoiceZipper -> VoiceZipper
-
-start vz@( _, [] ) = vz
-start ( ns, (p:ps) ) = start ( p : ns, ps )
-
-end vz@( [], _ ) = vz
-end ( (n:ns), ps ) = end ( ns, n : ps )
-
--- change the voice
-modify :: ( Voice -> Voice ) -> VoiceZipper -> VoiceZipper
-modify = first 
-
--- shed the zipper
-peek :: VoiceZipper -> Voice
-peek = fst
-
--- TODO given a time, find the corresponding note
+durationOfFocus :: VoiceZipper -> Double
+durationOfFocus = sum . map (D.dur . dur) . focus
