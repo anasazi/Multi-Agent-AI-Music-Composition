@@ -1,11 +1,11 @@
-module Voice
+module Music.Voice
 ( Voice, VoiceZipper
 , startTimeOfFocus, durationOfFocus
 ) where
 
-import Note 
-import Zipper
-import qualified Duration as D
+import Music.Note 
+import Util.Zipper
+import qualified Music.Duration as D
 
 {- At its core, a musical voice is a sequence of notes.
 If we assume that the notes don't overlap, then we can map R+ to the voice. This is useful for lookup.

@@ -1,4 +1,4 @@
-module StaffPoint
+module Music.StaffPoint
 ( StaffPoint
 , midC
 , up, down
@@ -11,8 +11,8 @@ import Control.Arrow
 import Test.QuickCheck
 import Control.Monad
 
-import Letter hiding (test)
-import qualified Letter
+import Music.Letter hiding (test)
+import qualified Music.Letter
 
 type OctaveNum = Integer
 
@@ -48,7 +48,7 @@ down = runSP >>> (\(l,o) -> if l == C then (C,o-1) else (l,o)) >>> first predL >
 qc = quickCheckWith stdArgs { maxSuccess = 500, maxDiscard = 2500 }
 
 test = do
-  Letter.test
+  Music.Letter.test
   putStrLn "StaffPoint.hs tests"
   qc $ uncurry (==) . (up . down &&& id)
   qc $ uncurry (==) . (down . up &&& id)

@@ -1,4 +1,4 @@
-module Scale
+module Music.Scale
 ( Scale
 , makeScale
 , BasedScale
@@ -13,8 +13,8 @@ module Scale
 , ionian, dorian, phrygian, lydian, mixolydian, aeolian, locrian
 ) where
 
-import Interval
-import Pitch
+import Music.Interval
+import Music.Pitch
 import qualified Data.List as L
 
 data Scale = S [Interval] deriving (Eq{-, Show-})

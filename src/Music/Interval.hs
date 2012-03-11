@@ -1,4 +1,4 @@
-module Interval
+module Music.Interval
 ( Interval, lspan, width
 , Quality(..)
 , quality
@@ -15,7 +15,7 @@ module Interval
 , test
 ) where
 
-import qualified Pitch as P
+import qualified Music.Pitch as P
 
 import Test.QuickCheck hiding (shrink)
 import Control.Monad

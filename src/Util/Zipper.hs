@@ -1,4 +1,4 @@
-module Zipper
+module Util.Zipper
 ( enterFront, enterBack
 , forward, back
 , forward', back'

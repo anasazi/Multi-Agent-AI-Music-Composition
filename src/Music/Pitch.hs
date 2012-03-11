@@ -1,4 +1,4 @@
-module Pitch
+module Music.Pitch
 ( Accidental
 , Pitch
 , point, off
@@ -8,8 +8,8 @@ module Pitch
 , test
 ) where
 
-import Letter (Letter(..))
-import qualified StaffPoint as SP
+import Music.Letter (Letter(..))
+import qualified Music.StaffPoint as SP
 
 import Test.QuickCheck
 import Control.Monad
