@@ -1,18 +1,20 @@
 module BlackboardSystem.Blackboard
 ( Blackboard
-, cantusFirmus
+, cantusFirmus, scale
 , counterPoint
 , passTest, failTest
 , modifyCP
 ) where
 
 import Music.Voice
+import Music.Scale
 import Util.Zipper
 
 data Blackboard = Blackboard
-                { cantusFirmus :: VoiceZipper
-                , counterPoint :: VoiceZipper
-                , testResult :: Bool
+                { cantusFirmus :: VoiceZipper -- the read only source voice
+                , scale :: Scale -- the scale the piece is composed in
+                , counterPoint :: VoiceZipper -- the voice we're making
+                , testResult :: Bool -- did we pass this test?
                 }
 
 passTest bb = bb { testResult = True }
