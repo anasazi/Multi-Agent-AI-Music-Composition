@@ -1,6 +1,7 @@
 module Music.Voice
 ( Voice, VoiceZipper
 , startTimeOfFocus, durationOfFocus
+, goToTime, goToTime'
 ) where
 
 import Music.Note 
@@ -27,3 +28,16 @@ startTimeOfFocus = sum . map (D.dur . dur) . context
 
 durationOfFocus :: VoiceZipper -> Double
 durationOfFocus = sum . map (D.dur . dur) . focus
+
+durationOfVoice :: VoiceZipper -> Double
+durationOfVoice = durationOfFocus . front
+
+goToTime :: VoiceZipper -> Double -> Maybe VoiceZipper
+goToTime vz t = f (front vz) 0
+  where f vz acc | acc > t   = back vz
+                 | otherwise = forward vz >>= \vz -> f vz (acc + D.dur (dur (head (focus vz)))) 
+
+goToTime' :: VoiceZipper -> Double -> VoiceZipper
+goToTime' vz t = f (front vz) 0
+  where f vz acc | acc > t   = back' vz
+                 | otherwise = f (forward' vz) (acc + D.dur (dur (head (focus vz)))) 
