@@ -1,6 +1,6 @@
 module Music.Voice
 ( Voice, VoiceZipper
-, startTimeOfFocus, durationOfFocus
+, startTimeOfFocus, durationOfFocus, durationOfVoice
 , goToTime, goToTime'
 ) where
 
