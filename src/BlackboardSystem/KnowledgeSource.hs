@@ -1,9 +1,14 @@
 module BlackboardSystem.KnowledgeSource
 ( KnowledgeSource(..)
 , isGenerator, isHardRule
+, makeSoftRule, makeHardRule, makeGenerator
 ) where
 
 import BlackboardSystem.Blackboard
+
+makeSoftRule op = KS { isTester = True, isSoftRule = True, operate = op }
+makeHardRule op = KS { isTester = True, isSoftRule = False, operate = op }
+makeGenerator op = KS { isTester = False, isSoftRule = False, operate = op }
 
 data KnowledgeSource = KS { isTester :: Bool
                           , isSoftRule :: Bool
