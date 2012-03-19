@@ -11,7 +11,7 @@ data KnowledgeSource = KS { isTester :: Bool
                           }
 
 isGenerator = not . isTester
-isHardRule = not . isSoftRule
+isHardRule ks = isTester ks && not (isSoftRule ks)
 
 {-
 class KnowledgeSource ks where
