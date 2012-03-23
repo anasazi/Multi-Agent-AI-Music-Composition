@@ -18,7 +18,7 @@ data Blackboard = Blackboard
                 , counterPoint :: VoiceZipper -- the voice we're making
                 , testResult :: Bool -- did we pass this test?
                 , timeToTestAt :: Double -- where should we look?
-                }
+                } deriving Show
 
 create cf s = Blackboard { cantusFirmus = cf
                          , scale = s
