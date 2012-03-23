@@ -6,6 +6,12 @@ import BlackboardSystem.Blackboard
 import BlackboardSystem.KnowledgeSource
 import Util.Zipper
 import Music.Voice
+import Music.Note 
+import qualified Music.Duration as D
+
+import qualified Data.List as L
+import Data.Function (on)
+import Music.Pitch (point)
 
 {-
 The control knows a list of test agents and a list of generator agents. DONE
@@ -20,7 +26,7 @@ If the top element is long enough to meet the goal length, it returns that eleme
 -}
 
 -- DONE how to represent a needed test? perhaps a list of (time to test, agent to test with)?
--- TODO function of identify where changes occurred on the blackboard. maybe a list of times?
+-- DONE function of identify where changes occurred on the blackboard. maybe a list of times?
 -- TODO applying a test and recording the results
 -- TODO applying a generator and recording the results
 -- DONE testing whether we should apply a generator or not
@@ -29,7 +35,7 @@ type Time = Double
 
 data ControlArgs = ControlArgs
   { testers :: [ KnowledgeSource ]
-  , generators :: [ KnowledgeSource ] 
+  , generators :: [ KnowledgeSource ]
   , sourceVoice :: VoiceZipper -- the cantus firmus
   }
 
@@ -60,6 +66,32 @@ instance Ord BlackboardContext where
     where length = durationOfCounterPoint . board
           soft = softViolations
           hard = hardViolations
+
+-- find where changes occured. 
+-- Identifies the first divergence point; everything afterwards needs to be rechecked.
+findChanges old new = let oldNotes = escape (counterPoint old)
+                          newNotes = escape (counterPoint new)
+                          oldTimes = scanl (+) 0 $ map (D.dur . dur) oldNotes
+                          newTimes = scanl (+) 0 $ map (D.dur . dur) newNotes
+                          old' = zip oldTimes oldNotes
+                          new' = zip newTimes newNotes
+                          eq (t,n) (t',n') = t == t' 
+                                          && n == n'
+                                          && ((==) `on` pitch) n n'
+                                          && ((==) `on` (point . pitch)) n n'
+                          changed = L.deleteFirstsBy eq new' old'
+                      in map fst changed
+
+{-
+go   = let x = [ midC, halve midC, dot midC, halve (halve (up midC)) ]
+           y = enterFront x
+           b = create (enterFront []) major
+           z = modifyCP b (const y)
+           xx = [ midC, halve (up midC), halve midC ]
+           yy = enterFront xx
+           zz = modifyCP b (const yy)
+       in  findChanges zz z
+       -}
 
 -- true if the partial composition is long enough that we're done
 longEnough cxt = let b = board cxt in durationOfCounterPoint b == durationOfCantusFirmus b
