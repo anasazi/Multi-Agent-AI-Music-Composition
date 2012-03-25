@@ -67,10 +67,13 @@ instance Ord BlackboardContext where
           soft = softViolations
           hard = hardViolations
 
+findChangesInCP old new = findChanges (counterPoint old) (counterPoint new)
+
 -- find where changes occured. 
 -- Identifies the first divergence point; everything afterwards needs to be rechecked.
-findChanges old new = let oldNotes = escape (counterPoint old)
-                          newNotes = escape (counterPoint new)
+findChanges :: VoiceZipper -> VoiceZipper -> [Time]
+findChanges old new = let oldNotes = escape old
+                          newNotes = escape new
                           oldTimes = scanl (+) 0 $ map (D.dur . dur) oldNotes
                           newTimes = scanl (+) 0 $ map (D.dur . dur) newNotes
                           old' = zip oldTimes oldNotes
