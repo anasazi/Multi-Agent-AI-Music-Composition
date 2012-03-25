@@ -1,7 +1,8 @@
-module Duration
+module Music.Duration
 ( Duration
 , halve, dot
 , whole, half, quarter, eighth
+, dur
 , test
 ) where
 

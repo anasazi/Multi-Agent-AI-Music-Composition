@@ -1,4 +1,4 @@
-module Letter
+module Music.Letter
 ( Letter(..)
 , succL, predL
 , test
