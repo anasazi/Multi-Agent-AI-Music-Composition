@@ -1,4 +1,4 @@
-module Interval
+module Music.Interval
 ( Interval, lspan, width
 , Quality(..)
 , quality
@@ -15,7 +15,7 @@ module Interval
 , test
 ) where
 
-import qualified Pitch as P
+import qualified Music.Pitch as P
 
 import Test.QuickCheck hiding (shrink)
 import Control.Monad
@@ -84,6 +84,7 @@ simplify i
 	-- manipulators
 		-- shorten / lengthen = dec/inc width
 		-- shrink / grow = dec/inc lspan
+-- TODO shorten and shrink could create invalid intervals. fix this
 shorten = lspan &&& width >>> second (subtract 1) >>> uncurry I
 lengthen = lspan &&& width >>> second (+1) >>> uncurry I
 

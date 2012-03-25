@@ -1,4 +1,4 @@
-module Note
+module Music.Note
 ( Note
 , midC
 , halve, dot
@@ -12,8 +12,8 @@ import Test.QuickCheck
 import Control.Monad
 import Control.Arrow
 
-import qualified Pitch as P
-import qualified Duration as D
+import qualified Music.Pitch as P
+import qualified Music.Duration as D
 
 data Note = N { pitch :: P.Pitch, dur :: D.Duration }
 	deriving (Eq, Ord)
