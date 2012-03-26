@@ -56,7 +56,8 @@ makeControl agents scale source rg = ControlContext testers generators targetDur
   where testers = filter isTester agents
         generators = filter isGenerator agents
         targetDur = durationOfVoice source
-        blackboards = [ BlackboardContext (create source scale rg) 0 0 [] ]
+        basedscale = Music.Scale.baseScale scale (pitch (head (escape source)))
+        blackboards = [ BlackboardContext (create source basedscale rg) 0 0 [] ]
 
 {- Main control loop 
   If the best blackboard has passed all tests and is long enough, we're done.

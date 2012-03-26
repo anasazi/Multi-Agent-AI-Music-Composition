@@ -5,7 +5,7 @@ module Music.Scale
 , baseScale, (.$)
 , allNotes, ($*)
 , getNote, ($#)
-, lenS
+, lenS, lenBS
 , inScale, ($.)
 , inScaleAt, ($@)
 , ($>), ($<)
@@ -38,6 +38,7 @@ getNote sc bn idx = (sc .$ bn)  $# idx -- just a rephrasing
 
 -- Given a scale, get the length
 lenS (S is) = length is
+lenBS (BS (sc,_)) = lenS sc
 
 -- Given a base note and a test note, check if the test note is generated in the scale
 bs $. n = n `elem` allNotes bs

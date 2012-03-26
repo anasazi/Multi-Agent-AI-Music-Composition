@@ -16,7 +16,7 @@ import System.Random (StdGen)
 
 data Blackboard = Blackboard
                 { cantusFirmus :: VoiceZipper -- the read only source voice
-                , scale :: Scale -- the scale the piece is composed in
+                , scale :: BasedScale -- the scale the piece is composed in
                 , counterPoint :: VoiceZipper -- the voice we're making
                 , testResult :: Bool -- did we pass this test?
                 , timeToTestAt :: Double -- where should we look?
