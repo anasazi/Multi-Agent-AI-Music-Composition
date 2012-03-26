@@ -5,6 +5,7 @@ module BlackboardSystem.Control
 ) where
 
 import BlackboardSystem.Blackboard hiding (randGen)
+import qualified BlackboardSystem.Blackboard as BB
 import BlackboardSystem.KnowledgeSource
 import Util.Zipper
 import Music.Voice
@@ -67,7 +68,7 @@ makeControl agents scale source rg = ControlContext testers generators targetDur
 controlLoop :: ControlContext -> ControlContext
 controlLoop cc | let b = bestBlackboard cc in longEnough b && outOfTests b = cc
                | outOfTests (bestBlackboard cc) = controlLoop (applyGen cc' genAgent)
-               | otherwise = controlLoop (let (best:rest) = blackboards cc in cc { blackboards = applyTest best : rest })
+               | otherwise = controlLoop (let (best:rest) = blackboards cc in cc { blackboards = reverse (L.sort (applyTest best : rest)) })
   where genAgent = generators cc !! rint
         (rint, newGen) = randomR (0, length (generators cc) - 1) (randGen cc)
         cc' = cc { randGen = newGen }
@@ -77,9 +78,9 @@ bestBlackboard = head . blackboards
 
 {- Apply a generator to the top rated blackboard and store the results -}
 applyGen :: ControlContext -> KnowledgeSource -> ControlContext
-applyGen cc gen = cc { blackboards = reverse (L.sort (modded : blackboards cc)) }
+applyGen cc gen = cc { blackboards = reverse (L.sort (modded : blackboards cc)), randGen = BB.randGen newBoard }
   where (best:rest) = blackboards cc
-        newBoard = (operate gen) (board best)
+        newBoard = (operate gen) (setGen (board best) (randGen cc))
         changedTimes = findChangesInCP (board best) newBoard
         tests = TestLoc <$> changedTimes <*> (testers cc)
         modded = best { board = newBoard, testsToRun = tests ++ testsToRun best }
@@ -90,9 +91,9 @@ applyTest bc = bc { hardViolations = hardNum, softViolations = softNum, testsToR
   where result = (operate agent) (lookAt (board bc) (testTime tl))
         (tl:tests) = testsToRun bc
         agent = testAgent tl
-        hardNum | isHardRule agent && testResult result = 1 + hardViolations bc
+        hardNum | isHardRule agent && not (testResult result) = 1 + hardViolations bc
                 | otherwise = hardViolations bc
-        softNum | isSoftRule agent && testResult result = 1 + softViolations bc
+        softNum | isSoftRule agent && not (testResult result) = 1 + softViolations bc
                 | otherwise = softViolations bc
 
 addTests bc tests = bc { testsToRun = tests ++ testsToRun bc }
@@ -118,9 +119,16 @@ instance Eq BlackboardContext where
 -- is has the same number of hard rule violations, but less soft rule violations
 -- is has the same number of rule violations of both types, but is longer
 instance Ord BlackboardContext where        
+  compare a b | hard a > hard b = LT
+              | hard a == hard b && soft a > soft b = LT
+              | hard a == hard b && soft a == soft b && length a < length b = LT
+              | hard a == hard b && soft a == soft b && length a == length b = EQ
+              | otherwise = case (compare b a) of LT -> GT; GT -> LT; EQ -> EQ
+{-
   a <= b = hard a > hard b || -- if a has more hard rule violations, it is worse
            hard a == hard b && soft a > soft b || -- if a breaks more soft rules than b it is worse
            hard a == hard b && soft a == soft b && length a <= length b
+           -}
     where length = durationOfCounterPoint . board
           soft = softViolations
           hard = hardViolations

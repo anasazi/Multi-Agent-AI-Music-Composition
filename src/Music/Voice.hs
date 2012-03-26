@@ -35,9 +35,11 @@ durationOfVoice = durationOfFocus . front
 goToTime :: VoiceZipper -> Double -> Maybe VoiceZipper
 goToTime vz t = f (front vz) 0
   where f vz acc | acc > t   = back vz
+                 | acc == t = Just vz
                  | otherwise = forward vz >>= \vz -> f vz (acc + D.dur (dur (head (focus vz)))) 
 
 goToTime' :: VoiceZipper -> Double -> VoiceZipper
 goToTime' vz t = f (front vz) 0
   where f vz acc | acc > t   = back' vz
+                 | acc == t  = vz
                  | otherwise = f (forward' vz) (acc + D.dur (dur (head (focus vz)))) 

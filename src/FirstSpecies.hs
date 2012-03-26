@@ -1,5 +1,5 @@
 module FirstSpecies
-( firstSpeciesGenerator
+( agents
 ) where
 
 import BlackboardSystem.KnowledgeSource
@@ -11,6 +11,9 @@ import Music.Scale
 import Music.Interval
 import Music.Duration (whole)
 import System.Random
+
+agents :: [ KnowledgeSource ]
+agents = [ firstSpeciesGenerator ]
 
 {- Generate a whole note simultaneous with a note of the cantus firmus.
    Limit to one or zero accidentals. Limit to current note +/- 2 octaves.
