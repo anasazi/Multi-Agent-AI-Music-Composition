@@ -24,7 +24,7 @@ firstSpeciesGenerator = makeGenerator (\bb ->
       base = pitch (head (maybe (focus cfNote) focus prevCPNote))
       scl = scale bb
       gen = randGen bb
-      (scaleIdx, gen') = randomR (0, lenS scl) gen 
+      (scaleIdx, gen') = randomR (0, lenS scl - 1) gen 
       (octaveOff, gen'') = randomR (False, True) gen' 
       (octaveUp, gen''') = randomR (False, True) gen'' 
       scalePitch = getNote scl base scaleIdx
@@ -36,3 +36,4 @@ firstSpeciesGenerator = makeGenerator (\bb ->
       newCP = modify (end (counterPoint bb)) (const [newNote])
       newBB = setGen (modifyCP bb (const newCP)) gen'''
   in if not isSimul then bb else newBB) 
+  "First species generator"

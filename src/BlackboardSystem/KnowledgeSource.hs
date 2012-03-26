@@ -7,14 +7,21 @@ module BlackboardSystem.KnowledgeSource
 
 import BlackboardSystem.Blackboard
 
-makeSoftRule op = KS { isTester = True, isSoftRule = True, operate = op }
-makeHardRule op = KS { isTester = True, isSoftRule = False, operate = op }
-makeGenerator op = KS { isTester = False, isSoftRule = False, operate = op }
+makeSoftRule op desc = KS { isTester = True, isSoftRule = True, operate = op, description = desc }
+makeHardRule op desc = KS { isTester = True, isSoftRule = False, operate = op, description = desc }
+makeGenerator op desc = KS { isTester = False, isSoftRule = False, operate = op, description = desc }
 
 data KnowledgeSource = KS { isTester :: Bool
                           , isSoftRule :: Bool
                           , operate :: Blackboard -> Blackboard
+                          , description :: String
                           }
+
+instance Show KnowledgeSource where
+  show ks = kstype ++ description ks
+    where kstype | isGenerator ks = "generator: "
+                 | isSoftRule ks = "soft tester: "
+                 | isHardRule ks = "hard tester: "
 
 isGenerator = not . isTester
 isHardRule ks = isTester ks && not (isSoftRule ks)

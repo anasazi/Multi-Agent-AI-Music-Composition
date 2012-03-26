@@ -1,5 +1,7 @@
 module BlackboardSystem.Control
 ( makeControl, controlLoop
+, ControlContext(..)
+, BlackboardContext(..)
 ) where
 
 import BlackboardSystem.Blackboard hiding (randGen)
@@ -44,7 +46,7 @@ data ControlContext = ControlContext
   , targetDuration :: Time -- the length we're looking for and will stop at
   , blackboards :: [ BlackboardContext ] -- all our partial solutions, sorted.
   , randGen :: StdGen -- used for generating random numbers without side effects
-  }
+  } deriving Show
 
 {- Creates a control context from a list of agents, a scale to work in, and a source voice.
    The context starts with one blackboard, which has an empty counterpoint and no tests queued.
@@ -66,7 +68,7 @@ controlLoop cc | let b = bestBlackboard cc in longEnough b && outOfTests b = cc
                | outOfTests (bestBlackboard cc) = controlLoop (applyGen cc' genAgent)
                | otherwise = controlLoop (let (best:rest) = blackboards cc in cc { blackboards = applyTest best : rest })
   where genAgent = generators cc !! rint
-        (rint, newGen) = randomR (0, length (generators cc)) (randGen cc)
+        (rint, newGen) = randomR (0, length (generators cc) - 1) (randGen cc)
         cc' = cc { randGen = newGen }
                                              
 
@@ -74,7 +76,7 @@ bestBlackboard = head . blackboards
 
 {- Apply a generator to the top rated blackboard and store the results -}
 applyGen :: ControlContext -> KnowledgeSource -> ControlContext
-applyGen cc gen = cc { blackboards = reverse (L.sort (modded:rest)) }
+applyGen cc gen = cc { blackboards = reverse (L.sort (modded : blackboards cc)) }
   where (best:rest) = blackboards cc
         newBoard = (operate gen) (board best)
         changedTimes = findChangesInCP (board best) newBoard
@@ -94,14 +96,14 @@ applyTest bc = bc { hardViolations = hardNum, softViolations = softNum, testsToR
 
 addTests bc tests = bc { testsToRun = tests ++ testsToRun bc }
 
-data TestLoc = TestLoc { testTime :: Time, testAgent :: KnowledgeSource }
+data TestLoc = TestLoc { testTime :: Time, testAgent :: KnowledgeSource } deriving Show
 
 data BlackboardContext = BlackboardContext
   { board :: Blackboard
   , hardViolations :: Integer -- number of hard rules broken
   , softViolations :: Integer -- number of soft rules broken
   , testsToRun :: [ TestLoc ]
-  }
+  }  deriving Show
 
 -- two blackboards have equal contexts if the partial composition is the same length
 -- and they have the same number of rule violations
