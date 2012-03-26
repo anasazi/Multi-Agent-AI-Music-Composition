@@ -6,6 +6,7 @@ module Music.Note
 , up, down
 , pitch, dur
 , test
+, wrapWithDur
 ) where
 
 import Test.QuickCheck
@@ -23,6 +24,9 @@ instance Show Note where
 
 instance Arbitrary Note where
 	arbitrary = liftM2 N arbitrary arbitrary
+
+wrapWithDur :: P.Pitch -> D.Duration -> Note
+wrapWithDur p d = N p d
 
 -- a middle C whole note
 midC = N P.midC D.whole

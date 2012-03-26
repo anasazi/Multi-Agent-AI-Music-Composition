@@ -2,7 +2,7 @@ module BlackboardSystem.Control
 ( makeControl, controlLoop
 ) where
 
-import BlackboardSystem.Blackboard
+import BlackboardSystem.Blackboard hiding (randGen)
 import BlackboardSystem.KnowledgeSource
 import Util.Zipper
 import Music.Voice

@@ -1,10 +1,11 @@
 module BlackboardSystem.Blackboard
 ( Blackboard
 , cantusFirmus, scale
-, counterPoint, testResult, timeToTestAt
+, counterPoint, testResult, timeToTestAt, randGen
 , passTest, failTest
 , modifyCP, lookAt
 , create
+, setGen
 , durationOfCantusFirmus, durationOfCounterPoint
 ) where
 
@@ -29,6 +30,8 @@ create cf s rg = Blackboard { cantusFirmus = cf
                             , timeToTestAt = 0
                             , randGen = rg
                             }
+
+setGen bb sg = bb { randGen = sg }
 
 lookAt bb t = bb { timeToTestAt = t }
 

@@ -1,5 +1,6 @@
 module BlackboardSystem.KnowledgeSource
-( KnowledgeSource(..)
+( KnowledgeSource
+, isTester, isSoftRule, operate
 , isGenerator, isHardRule
 , makeSoftRule, makeHardRule, makeGenerator
 ) where
