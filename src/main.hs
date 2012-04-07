@@ -5,12 +5,23 @@ import BlackboardSystem.Control
 import BlackboardSystem.KnowledgeSource
 
 import Music.Note
+import Music.Interval
+import Music.Duration
 import Music.Scale
 import Util.Zipper
 
 import System.Random
 
-cantusfirmus = enterFront [ midC, up . up . up . sharp . sharp . sharp . sharp . sharp $ midC ] --, (sharp (sharp (up midC))) ]
+cantusfirmus = enterFront [ midC
+                          , wrapWithDur (maj3 #^ (pitch midC)) whole
+                          , wrapWithDur (perf5 #^ (pitch midC)) whole
+                          , wrapWithDur (perf4 #^ (pitch midC)) whole
+                          , wrapWithDur (maj2 #^ (pitch midC)) whole
+                          , wrapWithDur (maj6 #^ (pitch midC)) whole
+                          , wrapWithDur (perf5 #^ (pitch midC)) whole
+                          , wrapWithDur (maj3 #^ (pitch midC)) whole
+                          , midC
+                          ]
 
 allAgents = GeneralSpecies.agents ++ FirstSpecies.agents
 
