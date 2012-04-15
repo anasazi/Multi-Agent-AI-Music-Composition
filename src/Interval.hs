@@ -13,6 +13,7 @@ module Interval
 , apUp, (#^)
 , apDn, (#.)
 , build, (#)
+, unison, min2, maj2, min3, maj3, perf4, perf5, min6, maj6, min7, maj7, octave
 ) where
 
 import Note
@@ -28,6 +29,21 @@ width (I (_,x)) = x
 runI (I x) = x
 
 makeInterval ls w = I (ls,w)
+
+-- common intervals
+i = curry I
+unison = i 1 0
+min2   = i 2 1
+maj2   = i 2 2
+min3   = i 3 3
+maj3   = i 3 4
+perf4  = i 4 5
+perf5  = i 5 7
+min6   = i 6 8
+maj6   = i 6 9
+min7   = i 7 10
+maj7   = i 7 11
+octave = i 8 12
 
 instance Show Interval where
   show i = show (quality i) ++ show (lspan i)
