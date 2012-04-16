@@ -13,7 +13,7 @@ module Interval
 , apUp, (#^)
 , apDn, (#.)
 , build, (#)
-, unison, min2, maj2, min3, maj3, perf4, perf5, min6, maj6, min7, maj7, octave
+, unison, min2, maj2, min3, maj3, perf4, perf5, min6, maj6, min7, maj7, octv
 ) where
 
 import Note
@@ -43,7 +43,7 @@ min6   = i 6 8
 maj6   = i 6 9
 min7   = i 7 10
 maj7   = i 7 11
-octave = i 8 12
+octv   = i 8 12
 
 instance Show Interval where
   show i = show (quality i) ++ show (lspan i)
