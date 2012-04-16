@@ -1,56 +1,68 @@
-module FirstSpecies
-( agents
-) where
+module FirstSpecies (agents) where
 
-import BlackboardSystem.KnowledgeSource
-import BlackboardSystem.Blackboard
-import Music.Note
-import Music.Voice
-import Util.Zipper
-import Music.Scale
-import Music.Interval
-import Music.Duration (whole)
+import Agent
+import Blackboard
+
+import Note
+import Interval
+import Voice
+import Scale
+
 import System.Random
+import Control.Monad
+import Data.Function (on)
 
-agents :: [ KnowledgeSource ]
-agents = [ firstSpeciesGenerator 
-         , consonantDownbeats
+type Time = Double
+
+agents :: [Agent]
+agents = [
          ]
 
-safeHead (x:_) = Just x
-safeHead [] = Nothing
+fromMaybe def may = maybe def id may
+toBool = fromMaybe False
 
-{- Generate a whole note simultaneous with a note of the cantus firmus.
-   Limit to one or zero accidentals. Limit to current note +/- 2 octaves.
-   Everything in first species must be consonant, so just look at stuff in the scale.
-   Place the generated note at the end of the counterpoint. -}
+fromJust (Just x) = x
+fromJust Nothing = error "fromJust on Nothing"
+
+{- Test if at a particular time we are in first species.
+   That is, are there simultaneous whole notes in both the CF and CP -}
+isFirstSpecies :: Blackboard -> Time -> Bool
+isFirstSpecies bb t =
+  let cpVoice = goToTime (counterPoint bb) t
+      cfVoice = goToTime (cantusFirmus bb) t
+      cpNote = getCurrentNote =<< cpVoice
+      cfNote = getCurrentNote =<< cfVoice
+      isWholeM = liftM $ on (==) Duration whole
+  in all (toBool . isWholeM) [ cpNote, cfNote ]
+     && toBool (liftM2 (on (==) startTimeOfFocus) cpVoice cfVoice)
+
+{- Generate a whole note simultaneous with a note of the CF.
+   Limit to one or zero accidentals.
+   Limit to current note +/- 2 octaves.
+   Place generated note at the end of the counterpoint. -}
 firstSpeciesGenerator = makeGenerator (\bb ->
-  let cpTime = durationOfCounterPoint bb
-      cfNote = goToTime' (cantusFirmus bb) cpTime
-      isSimul = cpTime == startTimeOfFocus cfNote
-      prevCPNote = back (end (counterPoint bb))
-      base = pitch (head (maybe (focus cfNote) focus prevCPNote))
-      scl = scale bb
-      gen = randGen bb
-      (scaleIdx, gen') = randomR (0, lenBS scl - 1) gen 
-      (octaveOff, gen'') = randomR (False, True) gen' 
-      (octaveUp, gen''') = randomR (False, True) gen'' 
-      scalePitch = scl $# scaleIdx 
-      offsetPitch | not octaveOff && octaveUp     = scalePitch
-                  | octaveOff && octaveUp         = octave #^ scalePitch
-                  | not octaveOff && not octaveUp = octave #. scalePitch
-                  | octaveOff && not octaveUp     = (octave ## octave) #. scalePitch
-      newNote = wrapWithDur offsetPitch whole
-      newCP = modify (end (counterPoint bb)) (const [newNote])
+  let lastCPVoice = back1 (end (counterPoint bb))
+      lastCPNote = getCurrentNote =<< lastCPVoice
+      cpEndTime = durationOfCounterPoint bb
+      corrCFVoice = goToTime (cantusFirmus bb) cpEndTime
+      corrCFNote = getCurrentNote =<< corrCFVoice
+      isSimul = toBool (liftM ((==cpEndTime) . startTimeOfFocus) lastCPVoice)
+      -- random note generation
+      unsafeLastCP = fromJust lastCPNote
+      (letIdx, gen') = randomR (0, fromEnum (maxBound :: Letter)) (rGen bb)
+      (newOct, gen'') = let o = octave unsafeLastCP in randomR (o-2,o+1)  gen'
+      (newAcc, gen''') = randomR (negate 1, 1) gen''
+      newNote = makeNote (toEnum letIdx) newOct newAcc (halves whole) (dots whole)
+      newCP = modify (const [newNote]) (end (counterPoint bb)) 
       newBB = setGen (modifyCP bb (const newCP)) gen'''
-  in if not isSimul then bb else newBB) 
+  in if isSimul then newBB else bb)
   "First species generator"
 
 consonantDownbeats = makeHardRule (\bb ->
-  let cpNoteM = goToTime (counterPoint bb) (timeToTestAt bb) >>= safeHead . focus
-      cfNoteM = goToTime (cantusFirmus bb) (timeToTestAt bb) >>= safeHead . focus
-      intervalM = cpNoteM >>= \cp -> cfNoteM >>= \cf -> return (pitch cp # pitch cf)
-      isConsonantM = intervalM >>= \i -> let ls = lspan (simplify i) in return (ls `elem` [1,3,5,6,8])
-      result = maybe False id isConsonantM
-  in  (if result then passTest else failTest) bb)
+  let cpNote = goToTime (counterPoint bb) (timeToTestAt bb) >>= getCurrentNote
+      cfNote = goToTime (cantusFirmus bb) (timeToTestAt bb) >>= getCurrentNote
+      interval = liftM2 (#) cpNote cfNote
+      isConsonant = (`elem`[unison,min3,maj3,perf5,min6,maj6,octv]) . simplify
+      result = toBool $ liftM isConsonant interval
+  in if result || not (isFirstSpecies bb (timeToTestAt bb)) then passTest bb else failTest bb)
   "First species - all downbeats must be consonant (1st, 3rd, 5th, 6th, 8th & compounds)"
