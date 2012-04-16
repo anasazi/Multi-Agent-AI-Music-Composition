@@ -17,7 +17,7 @@ import Test.QuickCheck
 import Control.Monad
 import Data.Function (on)
 
-data Letter = C | D | E | F | G | A | B deriving (Eq, Ord, Show, Enum)
+data Letter = C | D | E | F | G | A | B deriving (Eq, Ord, Show, Enum, Bounded)
 instance Arbitrary Letter where
   arbitrary = elements [ C .. B ]
 safeSucc l | l == B = C
