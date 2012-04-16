@@ -1,61 +1,50 @@
-module GeneralSpecies
-( agents
-) where
+module GeneralSpecies (agents) where
 
-import BlackboardSystem.KnowledgeSource
-import BlackboardSystem.Blackboard
-import Util.Zipper
-import Music.Interval
-import Music.Voice
-import Music.Note
+import Agent
+import Blackboard
+
+import Note
+import Interval
+import Voice
+
 import Data.Function (on)
+import Control.Monad
+import Control.Applicative
+import Control.Arrow
 
-agents :: [ KnowledgeSource ]
+agents :: [Agent]
 agents = [ beginPerfectConsonance
-         , noAugDimIntervals
-         , noSkipLargerThan6
+         , noAugDimCPIntervals
+         , don'tSkipMoreThan6
          ]
 
-safeHead (x:_) = Just x
-safeHead [] = Nothing
 
--- A general counterpoint hard rule: the first notes must be in a perfect consonance.
+fromMaybe def may = maybe def id may
+toBool = fromMaybe False
+
 beginPerfectConsonance = makeHardRule op "General CP - start with perfect consonance."
-  where op bb = let (cfStart:_) = escape (cantusFirmus bb)
-                    (cpStart:_) = escape (counterPoint bb)
-                    result = quality (pitch cfStart # pitch cpStart) == Perfect
-                in (if result then passTest else failTest) bb
-                --bb { testResult = quality (pitch cfStart # pitch cpStart) == Perfect }
+  where
+  op bb = let cfStart = getCurrentNote . front . cantusFirmus $ bb
+              cpStart = getCurrentNote . front . cantusFirmus $ bb
+              --result = quality (cfStart # cpStart) == Perfect
+              isPerfect = (==Perfect) . quality
+              result = toBool . liftM isPerfect . liftM2 (#) cfStart $ cpStart
+          in (if timeToTestAt bb /= 0 || result then passTest else failTest) bb
 
-noAugDimIntervals = makeHardRule op "General CP - no augmented or diminished intervals."
-  where op bb = let curVZ = goToTime (counterPoint bb) (timeToTestAt bb)
-                    preVZ = curVZ >>= back
-                    interval = do cur <- curVZ >>= safeHead . focus
-                                  pre <- preVZ >>= safeHead . focus
-                                  let curPitch = pitch cur
-                                  let prePitch = pitch pre
-                                  --let curPitch = pitch (head (focus cur))
-                                  --let prePitch = pitch (head (focus pre))
-                                  return $ curPitch # prePitch
-                    -- true if the interval is aug or dim
-                    augOrDimMaybe = do int <- interval
-                                       let q = quality int
-                                       return $ case q of (Dim _) -> True
-                                                          (Aug _) -> True
-                                                          otherwise -> False
-                    -- inverts the value of augOrDim if it exists
-                    -- if it doesn't then we don't have an invalid interval, so we're good.
-                    result = maybe True not augOrDimMaybe
-                in (if result then passTest else failTest) bb 
+noAugDimCPIntervals = makeHardRule op "General CP - no augmented or diminished intervals in CP."
+  where
+  op bb = let cp = goToTime (counterPoint bb) (timeToTestAt bb)
+              notes = getBackN 2 =<< cp
+              interval = liftM2 (#) (liftM (!!0) notes) (liftM (!!1) notes)
+              isDim = toBool . liftM ((<Minor) . quality) $ interval
+              isAug = toBool . liftM ((>Major) . quality) $ interval
+          in (if isDim || isAug then failTest else passTest) bb
 
-noSkipLargerThan6 = makeHardRule op "General CP - no skips larger than a sixth (except octave)."
-  where op bb = let curVZ = goToTime (counterPoint bb) (timeToTestAt bb)
-                    preVZ = curVZ >>= back
-                    intervalM = curVZ >>= safeHead . focus >>= \cur -> 
-                                preVZ >>= safeHead . focus >>= \pre ->
-                                return ( ((#) `on` pitch ) cur pre )
-                    tooBigM = do int <- intervalM
-                                 let size = lspan int
-                                 return $ size > 6 && size /= 8
-                    result = maybe True not tooBigM
-                in  (if result then passTest else failTest) bb
+don'tSkipMoreThan6 = makeHardRule op "General CP - no skips larger than a sixth (except octave)."
+  where
+  op bb = let cp = goToTime (counterPoint bb) (timeToTestAt bb)
+              notes = getBackN 2 =<< cp
+              interval = liftM2 (#) (liftM (!!0) notes) (liftM (!!1) notes)
+              tooBig = toBool . liftM ((> Span maj6) . Span) $ interval
+              isOctv = toBool . liftM (== octv) $ interval
+          in (if isOctv || not tooBig then passTest else failTest) bb
