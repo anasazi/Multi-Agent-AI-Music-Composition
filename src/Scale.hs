@@ -3,6 +3,8 @@ module Scale
 , allNotes, getNote, inScale, inScaleAt
 , major, naturalMinor, natmin, harmonicMinor, harmin, melodicMinor, melmin
 , ionian, dorian, phrygian, lydian, mixolydian, aeolian, locrian
+, BasedScale, runBS, scale, base, baseScale, (.$)
+, ($*), ($#), ($.), ($@)
 ) where
 
 import Interval
@@ -17,17 +19,30 @@ instance Show Scale where
 
 type Base = Note
 
+newtype BasedScale = BS (Scale, Note) deriving Eq
+instance Show BasedScale where
+  show bs = let (s,b) = runBS bs in show s ++ "@" ++ show b
+runBS (BS x) = x
+scale (BS (s,_)) = s
+base (BS (_,b)) = b
+baseScale = BS
+(.$) = baseScale
+
 allNotes :: Scale -> Base -> [Note]
 allNotes s b = map (#^b) (runS s)
+($*) = allNotes
 
 getNote :: Scale -> Base -> Integer -> Note
 getNote s b idx = allNotes s b !! fromIntegral idx
+bs $# idx = let (s,b) = runBS bs in getNote s b idx
 
 inScale :: Scale -> Base -> Note -> Bool
 inScale s b n = n `elem` allNotes s b
+bs $. n = let (s,b) = runBS bs in inScale s b n
 
 inScaleAt :: Scale -> Base -> Note -> Maybe Integer
 inScaleAt s b n = n `List.elemIndex` allNotes s b >>= return . fromIntegral
+bs $@ n = let (s,b) = runBS bs in inScaleAt s b n
 
 
 ------ Common Scales ---------
