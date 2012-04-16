@@ -2,6 +2,7 @@ module Voice
 ( Focus, Context, Voice
 , focus, context, runV, makeVoice
 , atStart, atEnd
+, modify
 , forward1, back1
 , forward, back
 , front, end
@@ -15,6 +16,7 @@ import Note
 import qualified Data.List as L
 import Control.Monad
 import Data.Maybe
+import Control.Arrow
 
 type Focus = [Note]
 type Context = [Note]
@@ -41,6 +43,9 @@ take' = L.genericTake
 drop' = L.genericDrop
 replicate' = L.genericReplicate
 length' = L.genericLength
+
+modify :: (Focus -> Focus) -> Voice -> Voice
+modify f = runV >>> first f >>> makeVoice
 
 forward1, back1 :: Voice -> Maybe Voice
 forward1 v = do let (foc,cxt) = runV v
