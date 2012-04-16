@@ -74,11 +74,13 @@ getCurrentNote = head' . focus
 
 getForwardN, getBackN :: Integer -> Voice -> Maybe [Note]
 getForwardN 0 v = Just []
+getForwardN 1 v = getCurrentNote v >>= \x -> Just [x]
 getForwardN n v = do v' <- forward1 v
                      ns <- getForwardN (n-1) v'
                      cur <- getCurrentNote v
                      Just (cur : ns)
 getBackN 0 v = Just []
+getBackN 1 v = getCurrentNote v >>= \x -> Just [x]
 getBackN n v = do v' <- back1 v
                   ns <- getBackN (n-1) v'
                   cur <- getCurrentNote v

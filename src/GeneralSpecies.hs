@@ -48,3 +48,16 @@ don'tSkipMoreThan6 = makeHardRule op "General CP - no skips larger than a sixth 
               tooBig = toBool . liftM ((> Span maj6) . Span) $ interval
               isOctv = toBool . liftM (== octv) $ interval
           in (if isOctv || not tooBig then passTest else failTest) bb
+
+-- TODO
+noAug4Outline = undefined
+fillInDim5OutlineAndOppStep = undefined
+endPerfectConsonance = undefined
+moreStepsThanSkips = undefined
+avoidMaj6Skips = undefined
+avoidMin6SkipsDown = undefined
+precedeOrFollowSkipWithOppStep = undefined
+don'tUseMoreThan2SuccSkips = undefined
+keep2SuccSkipsInSameDirSmall = undefined
+pyramidRule = undefined
+avoidSkipToAndFromLocalHighOrLow = undefined

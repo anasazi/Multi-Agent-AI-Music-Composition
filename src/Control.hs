@@ -1,3 +1,9 @@
+module Control
+( makeControl, controlLoop
+, ControlContext(..)
+, BlackboardContext(..)
+) where
+
 import Blackboard
 import Agent
 
