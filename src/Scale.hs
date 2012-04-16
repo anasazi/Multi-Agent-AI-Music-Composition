@@ -26,7 +26,7 @@ runBS (BS x) = x
 scale (BS (s,_)) = s
 base (BS (_,b)) = b
 baseScale = BS
-(.$) = baseScale
+(.$) = curry baseScale
 
 allNotes :: Scale -> Base -> [Note]
 allNotes s b = map (#^b) (runS s)
