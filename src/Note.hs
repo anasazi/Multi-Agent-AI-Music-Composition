@@ -16,6 +16,7 @@ module Note
 import Test.QuickCheck
 import Control.Monad
 import Data.Function (on)
+import Data.Ord (comparing)
 
 data Letter = C | D | E | F | G | A | B deriving (Eq, Ord, Show, Enum, Bounded)
 instance Arbitrary Letter where
@@ -46,7 +47,7 @@ runN (N x) = x
 
 makeNote l o a h d = N (l,o,a,h,d)
 
-durAsNum n = (1/2)^^(halves n) * (3/2)^^(dots n)
+durAsNum n = (1/2)^^ halves n  * (3/2)^^ dots n 
 
 instance Arbitrary Note where
   arbitrary = liftM5 makeNote arbitrary arbitrary arbitrary (arbitrary `suchThat` (>=0)) (arbitrary `suchThat` (>=0))
@@ -61,7 +62,7 @@ instance Show Duration where
 instance Eq Duration where
   (==) = (==) `on` (durAsNum . runDuration)
 instance Ord Duration where
-  compare = compare `on` (durAsNum . runDuration)
+  compare = comparing (durAsNum . runDuration)
 
 --- Location comparison
 loc n = (octave n, letter n)
@@ -71,7 +72,7 @@ instance Show Location where
 instance Eq Location where
   (==) = (==) `on` (loc . runLocation)
 instance Ord Location where
-  compare = compare `on` (loc . runLocation)
+  compare = comparing (loc . runLocation)
 
 -- Pitch comparison
 normalizePitch n@(N (C,o,_,_,_)) 
@@ -87,7 +88,7 @@ instance Show Pitch where
 instance Eq Pitch where
   (==) = (==) `on` (pitch . runPitch)
 instance Ord Pitch where
-  compare = compare `on` (pitch . runPitch)
+  compare = comparing (pitch . runPitch)
 
 --- Differences
 a @-@ b = durAsNum a - durAsNum b
@@ -99,14 +100,14 @@ a ~-~ b = pitch a - pitch b
 sharp, flat, raise, lower, halve, double, dot, undot :: Integer -> Note -> Note
 
 sharp i n = let (l,o,a,h,d) = runN n in N (l,o,a+i,h,d)
-flat i n = sharp (negate i) n
+flat i = sharp (negate i)
 
 raise i (N (l,o,a,h,d)) = N (succ' i l, o + octChange, a - offset, h, d)
   where notesToOctBorder = fromIntegral . length . takeWhile (/=B) . iterate (succ' 1) $ l -- num notes before octave number changes
         nonOctaveNotes = i `mod` 7 -- number of notes that are not part of straight octave increases
         numOctavesAdded = i `div` 7 -- number of octaves added
         octaveBorderCrossed = nonOctaveNotes > notesToOctBorder -- do we cross the octave border?
-        oneSteps = fromIntegral . length . filter (`elem`[C,F]) . map (flip succ' l) $ [1..nonOctaveNotes] -- how many one steps in the non octave part?
+        oneSteps = fromIntegral . length . filter (`elem`[C,F]) . map (`succ'` l) $ [1..nonOctaveNotes] -- how many one steps in the non octave part?
         offset = oneSteps + 2*(nonOctaveNotes - oneSteps) + 12*numOctavesAdded -- the total offset
         octChange = numOctavesAdded + if octaveBorderCrossed then 1 else 0 -- total octave change
 lower i (N (l,o,a,h,d)) = N (pred' i l, o - octChange, a + offset, h, d)
@@ -114,15 +115,15 @@ lower i (N (l,o,a,h,d)) = N (pred' i l, o - octChange, a + offset, h, d)
         nonOctaveNotes = i `mod` 7
         numOctavesAdded = i `div` 7
         octaveBorderCrossed = nonOctaveNotes > notesToOctBorder
-        oneSteps = fromIntegral . length . filter (`elem`[B,E]) . map (flip pred' l) $ [1..nonOctaveNotes]
+        oneSteps = fromIntegral . length . filter (`elem`[B,E]) . map (`pred'` l) $ [1..nonOctaveNotes]
         offset = oneSteps + 2*(nonOctaveNotes - oneSteps) + 12*numOctavesAdded
         octChange = numOctavesAdded + if octaveBorderCrossed then 1 else 0
 
 halve i n = let (l,o,a,h,d) = runN n in N (l,o,a,h+i,d)
-double i n = halve (negate i) n
+double i = halve (negate i) 
 
 dot i n = let (l,o,a,h,d) = runN n in N (l,o,a,h,d+i)
-undot i n = dot (negate i) n
+undot i = dot (negate i)
 
 midC = N (C,4,0,0,0)
 
@@ -148,5 +149,5 @@ test = do
   quickCheck $ \n (Positive i) -> Pitch n < Pitch (sharp i n)
   quickCheck $ \n (Positive i) -> Pitch n > Pitch (flat i n)
   
-  quickCheck $ \n (Positive i) -> i == ((sharp i n) ~-~ n)
-  quickCheck $ \n (Positive i) -> i == ((raise i n) #-# n)
+  quickCheck $ \n (Positive i) -> i == (sharp i n ~-~ n)
+  quickCheck $ \n (Positive i) -> i == (raise i n #-# n)
