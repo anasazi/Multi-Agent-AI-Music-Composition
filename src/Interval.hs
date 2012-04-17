@@ -20,6 +20,7 @@ import Note
 import Test.QuickCheck hiding (shrink)
 import Control.Monad
 import Data.Function (on)
+import Data.Ord (comparing)
 
 type LetterSpan = Integer
 type HalfStepWidth = Integer
@@ -56,7 +57,7 @@ newtype Span = Span { runSpan :: Interval }
 instance Eq Span where
   (==) = (==) `on` (lspan . runSpan)
 instance Ord Span where
-  compare = compare `on` (lspan . runSpan)
+  compare = comparing (lspan . runSpan)
 instance Show Span where
   show = show . lspan . runSpan
 
@@ -64,7 +65,7 @@ newtype Width = Width { runWidth :: Interval }
 instance Eq Width where
   (==) = (==) `on` (width . runWidth)
 instance Ord Width where
-  compare = compare `on` (width . runWidth)
+  compare = comparing (width . runWidth)
 instance Show Width where
   show = show . width . runWidth
 
@@ -72,7 +73,7 @@ instance Show Width where
 data Quality = Dim Integer | Minor | Perfect | Major | Aug Integer deriving Eq
 
 instance Ord Quality where
-  compare (Dim a) (Dim b) = compare (negate a) (negate b)
+  compare (Dim a) (Dim b) = comparing negate a b
   compare (Dim _) _       = LT
   compare _       (Dim _) = GT
 
@@ -144,7 +145,7 @@ grow n i = I (n + lspan i, width i)
 
 -- combine two intervals
 compose :: Interval -> Interval -> Interval
-compose a b = I ((lspan a + lspan b - 1), (width a + width b))
+compose a b = I (lspan a + lspan b - 1, width a + width b)
 (##) = compose
 
 -- apply intervals to notes
@@ -175,13 +176,13 @@ test = do
   quickCheck $ \i i' n -> (i #. (i' #. n)) == (i' #. (i #. n))
   quickCheck $ \i i' n -> (i ## i') #^ n == (i' ## i) #^ n
   quickCheck $ \n n' -> (n # n') == (n' # n)
-  quickCheck $ valid
+  quickCheck valid
   quickCheck $ valid . invert
   quickCheck $ valid . simplify
   quickCheck $ \a b -> valid (a ## b)
   quickCheck $ \a b -> valid (a # b)
-  quickCheck $ \i (Positive n) -> i == (shorten n (lengthen n i))
-  quickCheck $ \i (Positive n) -> i == (shrink n (grow n i))
+  quickCheck $ \i (Positive n) -> i == shorten n (lengthen n i)
+  quickCheck $ \i (Positive n) -> i == shrink n (grow n i)
   quickCheck $ \i (Positive n) -> Width i < Width (lengthen n i)
   quickCheck $ \i (Positive n) -> Span i < Span (grow n i)
   quickCheck $ \i (Positive n) -> let i' = lengthen (n+1) i in Width i' > Width (shorten n i')

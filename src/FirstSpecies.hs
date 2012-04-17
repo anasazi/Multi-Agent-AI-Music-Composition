@@ -11,6 +11,7 @@ import Scale
 import System.Random
 import Control.Monad
 import Data.Function (on)
+import Data.Maybe (fromMaybe)
 
 type Time = Double
 
@@ -19,7 +20,6 @@ agents = [ firstSpeciesGenerator
          , consonantDownbeats
          ]
 
-fromMaybe def may = maybe def id may
 toBool = fromMaybe False
 
 fromJust (Just x) = x
@@ -80,8 +80,8 @@ noDirectRepetition = undefined
 only2SequentialRepetition = undefined
 avoidMoreThan2PerfVertAdjacent = undefined
 avoidUnisonExceptStartAndEnd = undefined
-AvoidSimulSkipsUnlessSmall = undefined
-AvoidWideSeparation = undefined
-PreferDirChangeAfterLargeSkipAndFollowWithStep = undefined
-TryToConnectExtremesWithSteps = undefined
-CoverWholeOctaveEvery10To20Notes = undefined
+avoidSimulSkipsUnlessSmall = undefined
+avoidWideSeparation = undefined
+preferDirChangeAfterLargeSkipAndFollowWithStep = undefined
+tryToConnectExtremesWithSteps = undefined
+coverWholeOctaveEvery10To20Notes = undefined

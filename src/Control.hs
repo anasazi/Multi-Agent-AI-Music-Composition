@@ -40,7 +40,7 @@ instance Ord BlackboardContext where
               | hard a == hard b && soft a > soft b = LT
               | hard a == hard b && soft a == soft b && len a < len b = LT
               | hard a == hard b && soft a == soft b && len a == len b = EQ
-              | otherwise = case (compare b a) of LT -> GT; GT -> LT; EQ -> EQ
+              | otherwise = case compare b a of LT -> GT; GT -> LT; EQ -> EQ
     where len = durationOfCounterPoint . board
           soft = softViolations
           hard = hardViolations
@@ -80,15 +80,15 @@ bestBlackboard = maximum . blackboards
 applyGen :: ControlContext -> Agent -> ControlContext
 applyGen cc gen = cc { blackboards = modded : blackboards cc, randGen = rGen newBoard }
   where best = bestBlackboard cc
-        newBoard = (operate gen) (setGen (board best) (randGen cc))
+        newBoard = operate gen (setGen (board best) (randGen cc))
         changedTimes = findChangesInCP (board best) newBoard
-        tests = TL <$> changedTimes <*> (testers cc)
+        tests = TL <$> changedTimes <*> testers cc
         modded = best { board = newBoard, testsToRun = testsToRun best ++ tests }
 
 -- run the next test in the queue
 applyTest :: BlackboardContext -> BlackboardContext
 applyTest bc = bc { hardViolations = hardNum, softViolations = softNum, testsToRun = tests }
-  where result = (operate agent) (lookAt (board bc) (testTime tl))
+  where result = operate agent (lookAt (board bc) (testTime tl))
         (tl:tests) = testsToRun bc
         agent = testAgent tl
         hardNum | isHardRule agent && not (testResult result) = 1 + hardViolations bc

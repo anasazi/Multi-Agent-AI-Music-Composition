@@ -41,7 +41,8 @@ inScale s b n = n `elem` allNotes s b
 bs $. n = let (s,b) = runBS bs in inScale s b n
 
 inScaleAt :: Scale -> Base -> Note -> Maybe Integer
-inScaleAt s b n = n `List.elemIndex` allNotes s b >>= return . fromIntegral
+--inScaleAt s b n = n `List.elemIndex` allNotes s b >>= return . fromIntegral
+inScaleAt s b n = fmap fromIntegral (n `List.elemIndex` allNotes s b)
 bs $@ n = let (s,b) = runBS bs in inScaleAt s b n
 
 

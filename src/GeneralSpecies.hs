@@ -11,15 +11,15 @@ import Data.Function (on)
 import Control.Monad
 import Control.Applicative
 import Control.Arrow
+import Data.Maybe (fromMaybe)
 
 agents :: [Agent]
 agents = [ beginPerfectConsonance
          , noAugDimCPIntervals
-         , don'tSkipMoreThan6
+         , dontSkipMoreThan6
          ]
 
 
-fromMaybe def may = maybe def id may
 toBool = fromMaybe False
 
 beginPerfectConsonance = makeHardRule op "General CP - start with perfect consonance."
@@ -40,7 +40,7 @@ noAugDimCPIntervals = makeHardRule op "General CP - no augmented or diminished i
               isAug = toBool . liftM ((>Major) . quality) $ interval
           in (if isDim || isAug then failTest else passTest) bb
 
-don'tSkipMoreThan6 = makeHardRule op "General CP - no skips larger than a sixth (except octave)."
+dontSkipMoreThan6 = makeHardRule op "General CP - no skips larger than a sixth (except octave)."
   where
   op bb = let cp = goToTime (counterPoint bb) (timeToTestAt bb)
               notes = getBackN 2 =<< cp
@@ -57,7 +57,7 @@ moreStepsThanSkips = undefined
 avoidMaj6Skips = undefined
 avoidMin6SkipsDown = undefined
 precedeOrFollowSkipWithOppStep = undefined
-don'tUseMoreThan2SuccSkips = undefined
+dontUseMoreThan2SuccSkips = undefined
 keep2SuccSkipsInSameDirSmall = undefined
 pyramidRule = undefined
 avoidSkipToAndFromLocalHighOrLow = undefined
