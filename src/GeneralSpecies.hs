@@ -25,16 +25,7 @@ agents = [ beginPerfectConsonance
 
 toBool = fromMaybe False
 
-beginPerfectConsonance = makeHardRule op "General CP - start with perfect consonance."
-  where
-  op bb = let cfStart = getCurrentNote . front . cantusFirmus $ bb
-              cpStart = getCurrentNote . front . counterPoint $ bb
-              interval = liftM2 (#) cfStart cpStart
-              isPerfectConsonance i = quality i == Perfect && simplify i `elem` [unison, perf5, octv]
-              noteOk = toBool . liftM isPerfectConsonance $ interval
-              atFirstNote = timeToTestAt bb == 0
-          in (if not atFirstNote || noteOk then passTest else failTest) bb
-
+-- General CP hard rule 2
 noAugDimCPIntervals = makeHardRule op "General CP - no augmented or diminished intervals in CP."
   where
   op bb = let cp = goToTime (counterPoint bb) (timeToTestAt bb)
@@ -53,13 +44,16 @@ dontSkipMoreThan6 = makeHardRule op "General CP - no skips larger than a sixth (
               isOctv = toBool . liftM (== octv) $ interval
           in (if isOctv || not tooBig then passTest else failTest) bb
 
-noAug4Outline = flip makeHardRule "General CP - no outlines (interval btw local extrema) of augmented fourths." $ \bb ->
-    let cp = goToTime (counterPoint bb) (timeToTestAt bb)
-        ext1 = cp >>= recentLocalExtreme
-        ext2 = ext1 >>= recentLocalExtreme
-        interval = liftM2 (#) (ext1 >>= getCurrentNote) (ext2 >>= getCurrentNote)
-        isAug4 = toBool . liftM (==aug4) $ interval
-    in (if isAug4 then failTest else passTest) bb
+-- General CP hard rule 3
+beginPerfectConsonance = makeHardRule op "General CP - start with perfect consonance."
+  where
+  op bb = let cfStart = getCurrentNote . front . cantusFirmus $ bb
+              cpStart = getCurrentNote . front . counterPoint $ bb
+              interval = liftM2 (#) cfStart cpStart
+              isPerfectConsonance i = quality i == Perfect && simplify i `elem` [unison, perf5, octv]
+              noteOk = toBool . liftM isPerfectConsonance $ interval
+              atFirstNote = timeToTestAt bb == 0
+          in (if not atFirstNote || noteOk then passTest else failTest) bb
 
 endPerfectConsonance = flip makeHardRule "General CP - end with perfect consonance." $ \bb ->
   let atLastNote = durationOfCounterPoint bb == durationOfCantusFirmus bb
@@ -69,6 +63,15 @@ endPerfectConsonance = flip makeHardRule "General CP - end with perfect consonan
       isPerfectConsonance i = quality i == Perfect && simplify i `elem` [unison, perf5, octv]
       noteOk = toBool . liftM isPerfectConsonance $ interval
   in (if not atLastNote || noteOk then passTest else failTest) bb
+
+-- General CP hard rule 4
+noAug4Outline = flip makeHardRule "General CP - no outlines (interval btw local extrema) of augmented fourths." $ \bb ->
+    let cp = goToTime (counterPoint bb) (timeToTestAt bb)
+        ext1 = cp >>= recentLocalExtreme
+        ext2 = ext1 >>= recentLocalExtreme
+        interval = liftM2 (#) (ext1 >>= getCurrentNote) (ext2 >>= getCurrentNote)
+        isAug4 = toBool . liftM (==aug4) $ interval
+    in (if isAug4 then failTest else passTest) bb
 
 fillInDim5OutlineAndOppStep = flip makeHardRule "General CP - an outline of dim5 must be completely filled in and followed by a step in the opposite direciton." $ \bb ->
   let cp = goToTime (counterPoint bb) (timeToTestAt bb)
