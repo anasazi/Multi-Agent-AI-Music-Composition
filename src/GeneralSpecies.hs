@@ -18,6 +18,7 @@ agents = [ beginPerfectConsonance
          , noAugDimCPIntervals
          , dontSkipMoreThan6
          , noAug4Outline
+         , endPerfectConsonance
          ]
 
 
@@ -58,9 +59,16 @@ noAug4Outline = flip makeHardRule "General CP - no outlines (interval btw local 
         isAug4 = toBool . liftM (==aug4) $ interval
     in (if isAug4 then failTest else passTest) bb
 
+endPerfectConsonance = flip makeHardRule "General CP - end with perfect consonance." $ \bb ->
+  let atLastNote = durationOfCounterPoint bb == durationOfCantusFirmus bb
+      lastCFNote = getCurrentNote <=< back1 . end . cantusFirmus $ bb
+      lastCPNote = getCurrentNote <=< back1 . end . counterPoint $ bb
+      interval = liftM2 (#) lastCFNote lastCPNote
+      isPerfect = toBool . liftM ((==Perfect) . quality) $ interval
+  in (if not atLastNote || isPerfect then passTest else failTest) bb
+
 -- TODO
 fillInDim5OutlineAndOppStep = undefined
-endPerfectConsonance = undefined
 moreStepsThanSkips = undefined
 avoidMaj6Skips = undefined
 avoidMin6SkipsDown = undefined
