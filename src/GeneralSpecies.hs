@@ -27,11 +27,12 @@ toBool = fromMaybe False
 beginPerfectConsonance = makeHardRule op "General CP - start with perfect consonance."
   where
   op bb = let cfStart = getCurrentNote . front . cantusFirmus $ bb
-              cpStart = getCurrentNote . front . cantusFirmus $ bb
-              --result = quality (cfStart # cpStart) == Perfect
-              isPerfect = (==Perfect) . quality
-              result = toBool . liftM isPerfect . liftM2 (#) cfStart $ cpStart
-          in (if timeToTestAt bb /= 0 || result then passTest else failTest) bb
+              cpStart = getCurrentNote . front . counterPoint $ bb
+              interval = liftM2 (#) cfStart cpStart
+              isPerfectConsonance i = quality i == Perfect && simplify i `elem` [unison, perf5, octv]
+              noteOk = toBool . liftM isPerfectConsonance $ interval
+              atFirstNote = timeToTestAt bb == 0
+          in (if not atFirstNote || noteOk then passTest else failTest) bb
 
 noAugDimCPIntervals = makeHardRule op "General CP - no augmented or diminished intervals in CP."
   where
@@ -64,8 +65,9 @@ endPerfectConsonance = flip makeHardRule "General CP - end with perfect consonan
       lastCFNote = getCurrentNote <=< back1 . end . cantusFirmus $ bb
       lastCPNote = getCurrentNote <=< back1 . end . counterPoint $ bb
       interval = liftM2 (#) lastCFNote lastCPNote
-      isPerfect = toBool . liftM ((==Perfect) . quality) $ interval
-  in (if not atLastNote || isPerfect then passTest else failTest) bb
+      isPerfectConsonance i = quality i == Perfect && simplify i `elem` [unison, perf5, octv]
+      noteOk = toBool . liftM isPerfectConsonance $ interval
+  in (if not atLastNote || noteOk then passTest else failTest) bb
 
 -- TODO
 fillInDim5OutlineAndOppStep = undefined
