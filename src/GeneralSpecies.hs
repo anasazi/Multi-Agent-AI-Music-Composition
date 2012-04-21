@@ -25,7 +25,9 @@ agents = [ beginPerfectConsonance
 
 toBool = fromMaybe False
 
--- General CP hard rule 2
+-- skipping hard rule 1
+
+-- hard rule 2
 noAugDimCPIntervals = makeHardRule op "General CP - no augmented or diminished intervals in CP."
   where
   op bb = let cp = goToTime (counterPoint bb) (timeToTestAt bb)
@@ -44,7 +46,7 @@ dontSkipMoreThan6 = makeHardRule op "General CP - no skips larger than a sixth (
               isOctv = toBool . liftM (== octv) $ interval
           in (if isOctv || not tooBig then passTest else failTest) bb
 
--- General CP hard rule 3
+-- hard rule 3
 beginPerfectConsonance = makeHardRule op "General CP - start with perfect consonance."
   where
   op bb = let cfStart = getCurrentNote . front . cantusFirmus $ bb
@@ -64,7 +66,7 @@ endPerfectConsonance = flip makeHardRule "General CP - end with perfect consonan
       noteOk = toBool . liftM isPerfectConsonance $ interval
   in (if not atLastNote || noteOk then passTest else failTest) bb
 
--- General CP hard rule 4
+-- hard rule 4
 noAug4Outline = flip makeHardRule "General CP - no outlines (interval btw local extrema) of augmented fourths." $ \bb ->
     let cp = goToTime (counterPoint bb) (timeToTestAt bb)
         ext1 = cp >>= recentLocalExtreme
@@ -97,12 +99,35 @@ fillInDim5OutlineAndOppStep = flip makeHardRule "General CP - an outline of dim5
       -- We don't need to test if we're stepping in the opposite direction because we must be; otherwise ext1 would not be an extreme point.
   in (if not isDim5 || (isFilled && isStep) then passTest else failTest) bb
 
--- TODO
-moreStepsThanSkips = undefined
-avoidMaj6Skips = undefined
-avoidMin6SkipsDown = undefined
-precedeOrFollowSkipWithOppStep = undefined
-dontUseMoreThan2SuccSkips = undefined
-keep2SuccSkipsInSameDirSmall = undefined
-pyramidRule = undefined
-avoidSkipToAndFromLocalHighOrLow = undefined
+-- soft rule 1
+moreStepsThanSkips = flip makeSoftRule "General CP - use steps for frequently than skips." $ \bb ->
+  undefined
+
+-- soft rule 2
+avoidMaj6Skips = flip makeSoftRule "General CP - avoid skipping a major sixth." $ \bb ->
+  undefined
+
+avoidMin6SkipsDown = flip makeSoftRule "General CP - avoid skipping a minor sixth downwards." $ \bb ->
+  undefined
+
+-- soft rule 3
+precedeOrFollowSkipWithOppStep = flip makeSoftRule "General CP - prefer to precede and/or follow a skip with a step in opposite direction." $ \bb ->
+  undefined
+
+-- soft rule 4
+dontUseMoreThan2SuccSkips = flip makeSoftRule "General CP - do not use more than 2 skips in succession." $ \bb ->
+  undefined
+
+-- soft rule 5
+keep2SuccSkipsInSameDirSmall = flip makeSoftRule "General CP - if there are 2 successive skips in the same direction, keep them small (<4th)." $ \bb ->
+  undefined
+
+-- soft rule 6
+pyramidRule = flip makeSoftRule "General CP - when using skips and steps in the same direction, larger intervals should be below smaller ones." $ \bb ->
+  undefined
+
+-- soft rule 7
+avoidSkipToAndFromLocalHighOrLow = flip makeSoftRule "General CP - avoid skipping both to and from a temporary high or low point." $ \bb ->
+  undefined
+
+-- skipping soft rule 8
