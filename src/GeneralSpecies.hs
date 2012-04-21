@@ -17,6 +17,7 @@ agents :: [Agent]
 agents = [ beginPerfectConsonance
          , noAugDimCPIntervals
          , dontSkipMoreThan6
+         , noAug4Outline
          ]
 
 
@@ -49,8 +50,15 @@ dontSkipMoreThan6 = makeHardRule op "General CP - no skips larger than a sixth (
               isOctv = toBool . liftM (== octv) $ interval
           in (if isOctv || not tooBig then passTest else failTest) bb
 
+noAug4Outline = flip makeHardRule "General CP - no outlines (interval btw local extrema) of augmented fourths." $ \bb ->
+    let cp = goToTime (counterPoint bb) (timeToTestAt bb)
+        ext1 = cp >>= recentLocalExtreme
+        ext2 = ext1 >>= recentLocalExtreme
+        interval = liftM2 (#) (ext1 >>= getCurrentNote) (ext2 >>= getCurrentNote)
+        isAug4 = toBool . liftM (==aug4) $ interval
+    in (if isAug4 then failTest else passTest) bb
+
 -- TODO
-noAug4Outline = undefined
 fillInDim5OutlineAndOppStep = undefined
 endPerfectConsonance = undefined
 moreStepsThanSkips = undefined
