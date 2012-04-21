@@ -14,6 +14,7 @@ module Interval
 , apDn, (#.)
 , build, (#)
 , unison, min2, maj2, min3, maj3, perf4, perf5, min6, maj6, min7, maj7, octv
+, aug4, dim5
 ) where
 
 import Note
@@ -39,6 +40,8 @@ maj2   = i 2 2
 min3   = i 3 3
 maj3   = i 3 4
 perf4  = i 4 5
+aug4   = i 4 6
+dim5   = i 5 6
 perf5  = i 5 7
 min6   = i 6 8
 maj6   = i 6 9
