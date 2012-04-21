@@ -19,6 +19,7 @@ agents = [ beginPerfectConsonance
          , dontSkipMoreThan6
          , noAug4Outline
          , endPerfectConsonance
+         , fillInDim5OutlineAndOppStep
          ]
 
 
@@ -69,8 +70,31 @@ endPerfectConsonance = flip makeHardRule "General CP - end with perfect consonan
       noteOk = toBool . liftM isPerfectConsonance $ interval
   in (if not atLastNote || noteOk then passTest else failTest) bb
 
+fillInDim5OutlineAndOppStep = flip makeHardRule "General CP - an outline of dim5 must be completely filled in and followed by a step in the opposite direciton." $ \bb ->
+  let cp = goToTime (counterPoint bb) (timeToTestAt bb)
+      ext1 = cp >>= recentLocalExtreme
+      ext2 = ext1 >>= recentLocalExtreme
+      ext1Note = ext1 >>= getCurrentNote
+      ext2Note = ext2 >>= getCurrentNote
+      interval = liftM2 (#) ext1Note ext2Note
+      isDim5 = toBool . liftM (==dim5) $ interval
+      numBtw = fmap (subtract 1) $ liftM2 (-) (fmap numAfter ext2) (fmap numAfter ext1)
+      lowerNote = liftM2 (min `on` Location) ext1Note ext2Note >>= \(Location note) -> Just note :: Maybe Note
+      fillNotes = map (\n -> liftM (raise n) lowerNote) [1,2,3] :: [ Maybe Note ]
+      intervening = do n <- numBtw
+                       start <- ext2
+                       (_:notes) <- getForwardN (n+1) start
+                       return notes :: Maybe [Note]
+      isFilled = toBool $ do interNotes <- intervening
+                             let f ml = liftM (`elem` (map Location interNotes)) ml
+                             let fillLocs = map (liftM Location) fillNotes
+                             return . and . map toBool . map f $ fillLocs
+      followingNote = ext1 >>= forward1 >>= getCurrentNote
+      isStep = toBool $ liftM2 (#-#) ext1Note followingNote >>= Just . (==2) . abs
+      -- We don't need to test if we're stepping in the opposite direction because we must be; otherwise ext1 would not be an extreme point.
+  in (if not isDim5 || (isFilled && isStep) then passTest else failTest) bb
+
 -- TODO
-fillInDim5OutlineAndOppStep = undefined
 moreStepsThanSkips = undefined
 avoidMaj6Skips = undefined
 avoidMin6SkipsDown = undefined
