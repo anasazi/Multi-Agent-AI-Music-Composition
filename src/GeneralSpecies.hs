@@ -21,6 +21,8 @@ agents = [ beginPerfectConsonance
          , endPerfectConsonance
          , fillInDim5OutlineAndOppStep
          , moreStepsThanSkips
+         , avoidMaj6Skips
+         , avoidMin6SkipsDown
          ]
 
 
@@ -111,10 +113,20 @@ moreStepsThanSkips = flip makeSoftRule "General CP - use steps for frequently th
 
 -- soft rule 2
 avoidMaj6Skips = flip makeSoftRule "General CP - avoid skipping a major sixth." $ \bb ->
-  undefined
+  let cp = goToTime (counterPoint bb) (timeToTestAt bb)
+      notes = getBackN 2 =<< cp
+      interval = do [cur,bk1] <- notes
+                    return $ cur # bk1
+      isMaj6 = toBool . liftM (==maj6) $ interval
+  in (if isMaj6 then failTest else passTest) bb
 
 avoidMin6SkipsDown = flip makeSoftRule "General CP - avoid skipping a minor sixth downwards." $ \bb ->
-  undefined
+  let cp = goToTime (counterPoint bb) (timeToTestAt bb)
+      notes = getBackN 2 =<< cp
+      interval = notes >>= \[cur,bk1] -> return $ cur # bk1
+      isMin6 = toBool . liftM (==min6) $ interval
+      isDesc = toBool $ notes >>= \[cur,bk1] -> return $ Location cur < Location bk1 
+  in (if isMin6 && isDesc then failTest else passTest) bb
 
 -- soft rule 3
 precedeOrFollowSkipWithOppStep = flip makeSoftRule "General CP - prefer to precede and/or follow a skip with a step in opposite direction." $ \bb ->
