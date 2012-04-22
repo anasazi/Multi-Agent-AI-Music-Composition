@@ -3,6 +3,7 @@ import qualified GeneralSpecies
 
 import Control
 import Agent
+import Blackboard
 
 import Note
 import Scale
@@ -28,10 +29,16 @@ allAgents = GeneralSpecies.agents ++ FirstSpecies.agents
 
 control gen = makeControl allAgents major cantusfirmus gen
 
+prettyPrint bcxt = do putStrLn "Cantus Firmus"
+                      print (focus (front (cantusFirmus (board bcxt))))
+                      putStrLn "Counter Point"
+                      print (focus (front (counterPoint (board bcxt))))
+                      putStrLn "Hard Violations"
+                      print (hardViolations bcxt)
+                      putStrLn "Soft Violations"
+                      print (softViolations bcxt)
+
 main = do 
           gen <- getStdGen
-          --let gen = mkStdGen 1
           let cc = (controlLoop (control gen))
-          --print $ targetDuration cc
-          print (maximum (blackboards cc))
-          --mapM_ print (blackboards cc)
+          prettyPrint (maximum (blackboards cc))
