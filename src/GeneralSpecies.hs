@@ -23,6 +23,9 @@ agents = [ beginPerfectConsonance
          , moreStepsThanSkips
          , avoidMaj6Skips
          , avoidMin6SkipsDown
+--         , precedeOrFollowSkipWithOppStep -- This rule caused the AI to get trapped easily. It needs a better way to recognize this kind of situation. Or change rule to be in aggretate form.
+         , dontUseMoreThan2SuccSkips
+         , keep2SuccSkipsInSameDirSmall
          ]
 
 
@@ -130,15 +133,41 @@ avoidMin6SkipsDown = flip makeSoftRule "General CP - avoid skipping a minor sixt
 
 -- soft rule 3
 precedeOrFollowSkipWithOppStep = flip makeSoftRule "General CP - prefer to precede and/or follow a skip with a step in opposite direction." $ \bb ->
-  undefined
+  let cp = goToTime (counterPoint bb) (timeToTestAt bb)
+      notes = getBackN 3 =<< cp
+      intervals = notes >>= \[cur,bk1,bk2] -> return [cur # bk1, bk1 # bk2]
+      isSkip = (>2) . lspan
+      bothSkips = toBool $ intervals >>= return . all isSkip
+      oneSkip = toBool $ intervals >>= return . any isSkip
+      isOpp = toBool $ do [cur,bk1,bk2] <- notes
+                          let isMin = Location cur > Location bk1 && Location bk1 < Location bk2
+                          let isMax = Location cur < Location bk1 && Location bk1 > Location bk2
+                          return $ isMin || isMax
+  in (if bothSkips || oneSkip && not isOpp then failTest else passTest) bb
 
 -- soft rule 4
 dontUseMoreThan2SuccSkips = flip makeSoftRule "General CP - do not use more than 2 skips in succession." $ \bb ->
-  undefined
+  let cp = goToTime (counterPoint bb) (timeToTestAt bb)
+      notes = cp >>= getBackN 4 
+      intervals = liftM (\ns -> zipWith (#) ns (drop 1 ns)) $ notes 
+      isSkip = (>2) . lspan
+      allSkips = toBool $ fmap (all isSkip) intervals
+  in (if allSkips then failTest else passTest) bb
 
 -- soft rule 5
 keep2SuccSkipsInSameDirSmall = flip makeSoftRule "General CP - if there are 2 successive skips in the same direction, keep them small (<4th)." $ \bb ->
-  undefined
+  let cp = goToTime (counterPoint bb) (timeToTestAt bb)
+      notes = cp >>= getBackN 3
+      intervals = liftM (\ns -> zipWith (#) ns (drop 1 ns)) $ notes
+      isSkip = (>2) . lspan
+      isSmall = (<4) . lspan
+      inSameDir = toBool $ do [cur,bk1,bk2] <- notes
+                              let isUp = Location bk2 < Location bk1 && Location bk1 < Location cur
+                              let isDn = Location bk2 > Location bk1 && Location bk1 > Location cur
+                              return $ isUp || isDn
+      bothSkips = toBool $ intervals >>= return . all isSkip
+      bothSmall = toBool $ intervals >>= return . all isSmall
+  in (if bothSkips && inSameDir && not bothSmall then failTest else passTest) bb
 
 -- soft rule 6
 pyramidRule = flip makeSoftRule "General CP - when using skips and steps in the same direction, larger intervals should be below smaller ones." $ \bb ->
