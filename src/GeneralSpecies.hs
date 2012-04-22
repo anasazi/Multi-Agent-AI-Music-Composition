@@ -20,6 +20,7 @@ agents = [ beginPerfectConsonance
          , noAug4Outline
          , endPerfectConsonance
          , fillInDim5OutlineAndOppStep
+         , moreStepsThanSkips
          ]
 
 
@@ -101,7 +102,12 @@ fillInDim5OutlineAndOppStep = flip makeHardRule "General CP - an outline of dim5
 
 -- soft rule 1
 moreStepsThanSkips = flip makeSoftRule "General CP - use steps for frequently than skips." $ \bb ->
-  undefined
+  let cpNotes = focus . front . counterPoint $ bb
+      cpIntervals = zipWith (#) cpNotes (drop 1 cpNotes)
+      isSkip = (>2) . lspan
+      netSteps = sum . map (\i -> if isSkip i then (-1) else 1) $ cpIntervals
+      -- going to go ahead and prefer a majority of steps
+  in (if netSteps >= 0 then passTest else failTest) bb
 
 -- soft rule 2
 avoidMaj6Skips = flip makeSoftRule "General CP - avoid skipping a major sixth." $ \bb ->
