@@ -53,7 +53,7 @@ firstSpeciesGenerator = makeGenerator op "First species generator"
         -- random note generation
         baseNote = fromMaybe (fromJust corrCFNote) lastCPNote
         (letIdx, gen') = randomR (0, fromEnum (maxBound :: Letter)) (rGen bb)
-        (newOct, gen'') = let o = octave baseNote in randomR (o-2,o+1)  gen'
+        (newOct, gen'') = let o = octave baseNote in randomR (o-1,o)  gen'
         (newAcc, gen''') = randomR (negate 1, 1) gen''
         newNote = makeNote (toEnum letIdx) newOct newAcc (halves whole) (dots whole)
         newCP = modify (const [newNote]) (end (counterPoint bb)) 
