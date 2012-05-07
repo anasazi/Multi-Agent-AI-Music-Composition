@@ -20,6 +20,7 @@ import qualified Data.List as L
 import Control.Monad
 import Data.Maybe
 import Control.Arrow
+import Data.Ord (comparing)
 
 type Focus = [Note]
 type Context = [Note]
@@ -31,6 +32,19 @@ runV (V x) = x
 makeVoice = V
 instance Eq Voice where
   a == b = focus (front a) == focus (front b)
+
+{- Building a lexicographic ordering for Voice. We need this so we can use a Map.
+   First we need an ordering on Note that has no overlap. -}
+newtype LPD = LPD Note
+instance Eq LPD where
+  (LPD a) == (LPD b) = a == b
+instance Ord LPD where
+  compare (LPD a) (LPD b) | l /= EQ = l | p /= EQ = p | otherwise = d
+    where l = comparing Location a b
+          p = comparing Pitch a b
+          d = comparing Duration a b
+instance Ord Voice where
+  compare a b = comparing (map LPD . focus . front) a b
 
 atStart, atEnd :: Focus -> Voice
 atStart ns = V (ns,[])
