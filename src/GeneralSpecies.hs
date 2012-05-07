@@ -23,7 +23,7 @@ agents = [ beginPerfectConsonance
          , moreStepsThanSkips
          , avoidMaj6Skips
          , avoidMin6SkipsDown
---         , precedeOrFollowSkipWithOppStep -- This rule caused the AI to get trapped easily. It needs a better way to recognize this kind of situation. Or change rule to be in aggretate form.
+         , precedeOrFollowSkipWithOppStep 
          , dontUseMoreThan2SuccSkips
          , keep2SuccSkipsInSameDirSmall
          ]
