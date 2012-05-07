@@ -117,7 +117,7 @@ applyTest b bm = M.adjust (\bc -> bc { hard = newHard, soft = newSoft, toRun = t
 
 -- queue up more tests
 addTests :: Blackboard -> [TestLoc] -> BlackboardMap -> BlackboardMap
-addTests b tests bm = M.adjust (\cxt -> cxt { toRun = toRun cxt ++ tests }) b bm
+addTests b tests = M.adjust (\cxt -> cxt { toRun = toRun cxt ++ tests }) b
 
 data ControlContext = ControlContext
   { testers :: [ Agent ]
@@ -151,7 +151,7 @@ applyGen cc gen = cc { blackboards = modded, randGen = rGen newBoard }
         newBoard = operate gen (setGen best (randGen cc))
         changedTimes = findChangesInCP best newBoard
         tests = TL <$> changedTimes <*> testers cc
-        modded = trace (show . focus . front . counterPoint $ newBoard) addTests newBoard tests . insertWithParent best newBoard $ (blackboards cc)
+        modded = trace (show . focus . front . counterPoint $ newBoard) addTests newBoard tests . insertWithParent best newBoard $ blackboards cc
 
 -- This is ok as is
 findChangesInCP :: Blackboard -> Blackboard -> [Time]

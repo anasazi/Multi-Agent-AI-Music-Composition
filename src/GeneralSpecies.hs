@@ -97,9 +97,9 @@ fillInDim5OutlineAndOppStep = flip makeHardRule "General CP - an outline of dim5
                        (_:notes) <- getForwardN (n+1) start
                        return notes :: Maybe [Note]
       isFilled = toBool $ do interNotes <- intervening
-                             let f ml = liftM (`elem` (map Location interNotes)) ml
+                             let f = liftM (`elem` map Location interNotes)
                              let fillLocs = map (liftM Location) fillNotes
-                             return . and . map toBool . map f $ fillLocs
+                             return . all toBool . map f $ fillLocs
       followingNote = ext1 >>= forward1 >>= getCurrentNote
       isStep = toBool $ liftM2 (#-#) ext1Note followingNote >>= Just . (==2) . abs
       -- We don't need to test if we're stepping in the opposite direction because we must be; otherwise ext1 would not be an extreme point.
@@ -137,8 +137,8 @@ precedeOrFollowSkipWithOppStep = flip makeSoftRule "General CP - prefer to prece
       notes = getBackN 3 =<< cp
       intervals = notes >>= \[cur,bk1,bk2] -> return [cur # bk1, bk1 # bk2]
       isSkip = (>2) . lspan
-      bothSkips = toBool $ intervals >>= return . all isSkip
-      oneSkip = toBool $ intervals >>= return . any isSkip
+      bothSkips = toBool $ fmap (all isSkip) intervals
+      oneSkip = toBool $ fmap (any isSkip) intervals
       isOpp = toBool $ do [cur,bk1,bk2] <- notes
                           let isMin = Location cur > Location bk1 && Location bk1 < Location bk2
                           let isMax = Location cur < Location bk1 && Location bk1 > Location bk2
@@ -149,7 +149,7 @@ precedeOrFollowSkipWithOppStep = flip makeSoftRule "General CP - prefer to prece
 dontUseMoreThan2SuccSkips = flip makeSoftRule "General CP - do not use more than 2 skips in succession." $ \bb ->
   let cp = goToTime (counterPoint bb) (timeToTestAt bb)
       notes = cp >>= getBackN 4 
-      intervals = liftM (\ns -> zipWith (#) ns (drop 1 ns)) $ notes 
+      intervals = liftM (\ns -> zipWith (#) ns (drop 1 ns)) notes 
       isSkip = (>2) . lspan
       allSkips = toBool $ fmap (all isSkip) intervals
   in (if allSkips then failTest else passTest) bb
@@ -158,15 +158,15 @@ dontUseMoreThan2SuccSkips = flip makeSoftRule "General CP - do not use more than
 keep2SuccSkipsInSameDirSmall = flip makeSoftRule "General CP - if there are 2 successive skips in the same direction, keep them small (<4th)." $ \bb ->
   let cp = goToTime (counterPoint bb) (timeToTestAt bb)
       notes = cp >>= getBackN 3
-      intervals = liftM (\ns -> zipWith (#) ns (drop 1 ns)) $ notes
+      intervals = liftM (\ns -> zipWith (#) ns (drop 1 ns)) notes
       isSkip = (>2) . lspan
       isSmall = (<4) . lspan
       inSameDir = toBool $ do [cur,bk1,bk2] <- notes
                               let isUp = Location bk2 < Location bk1 && Location bk1 < Location cur
                               let isDn = Location bk2 > Location bk1 && Location bk1 > Location cur
                               return $ isUp || isDn
-      bothSkips = toBool $ intervals >>= return . all isSkip
-      bothSmall = toBool $ intervals >>= return . all isSmall
+      bothSkips = toBool $ fmap (all isSkip) intervals --intervals >>= return . all isSkip
+      bothSmall = toBool $ fmap (all isSmall) intervals -- intervals >>= return . all isSmall
   in (if bothSkips && inSameDir && not bothSmall then failTest else passTest) bb
 
 -- soft rule 6

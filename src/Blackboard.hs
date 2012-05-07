@@ -25,7 +25,7 @@ data Blackboard = Blackboard
 instance Eq Blackboard where
   a == b = counterPoint a == counterPoint b
 instance Ord Blackboard where
-  compare a b = comparing counterPoint a b
+  compare = comparing counterPoint 
 
 create cf bs rg = Blackboard 
   { cantusFirmus = cf
