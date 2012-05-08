@@ -26,6 +26,8 @@ agents = [ beginPerfectConsonance
          , precedeOrFollowSkipWithOppStep 
          , dontUseMoreThan2SuccSkips
          , keep2SuccSkipsInSameDirSmall
+         , pyramidRule
+         , avoidSkipToAndFromLocalHighOrLow
          ]
 
 
@@ -165,16 +167,36 @@ keep2SuccSkipsInSameDirSmall = flip makeSoftRule "General CP - if there are 2 su
                               let isUp = Location bk2 < Location bk1 && Location bk1 < Location cur
                               let isDn = Location bk2 > Location bk1 && Location bk1 > Location cur
                               return $ isUp || isDn
-      bothSkips = toBool $ fmap (all isSkip) intervals --intervals >>= return . all isSkip
-      bothSmall = toBool $ fmap (all isSmall) intervals -- intervals >>= return . all isSmall
+      bothSkips = toBool $ fmap (all isSkip) intervals 
+      bothSmall = toBool $ fmap (all isSmall) intervals 
   in (if bothSkips && inSameDir && not bothSmall then failTest else passTest) bb
 
 -- soft rule 6
 pyramidRule = flip makeSoftRule "General CP - when using skips and steps in the same direction, larger intervals should be below smaller ones." $ \bb ->
-  undefined
+  let cp = goToTime (counterPoint bb) (timeToTestAt bb)
+      notes = cp >>= getBackN 3
+      intervals = liftM (\ns -> zipWith (#) ns (drop 1 ns)) notes
+      inSameDir = toBool $ do [cur,bk1,bk2] <- notes
+                              let isUp = Location bk2 < Location bk1 && Location bk1 < Location cur
+                              let isDn = Location bk2 > Location bk1 && Location bk1 > Location cur
+                              return $ isUp || isDn
+      lowerIsLarger = toBool $ do [curI,bk1I] <- intervals
+                                  [curN,_,bk2N] <- notes
+                                  let (lower,higher) = if Location bk2N < Location curN then (bk1I,curI) else (curI,bk1I)
+                                  return $ Span lower >= Span higher
+  in (if inSameDir && not lowerIsLarger then failTest else passTest) bb
 
 -- soft rule 7
 avoidSkipToAndFromLocalHighOrLow = flip makeSoftRule "General CP - avoid skipping both to and from a temporary high or low point." $ \bb ->
-  undefined
+  let cp = goToTime (counterPoint bb) (timeToTestAt bb)
+      ext = cp >>= recentLocalExtreme >>= getCurrentNote
+      isSkip = (>2) . lspan
+      bk1 = fmap (head . drop 1) (cp >>= getBackN 2)
+      fw1 = fmap (head . drop 1) (cp >>= getForwardN 2)
+      toI = liftM2 (#) bk1 ext
+      fromI = liftM2 (#) ext fw1
+      backSkip = toBool $ fmap isSkip toI
+      foreSkip = toBool $ fmap isSkip fromI
+  in (if backSkip && foreSkip then failTest else passTest) bb
 
 -- skipping soft rule 8
