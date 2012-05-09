@@ -2,6 +2,7 @@ module Control
 ( makeControl, controlLoop
 , ControlContext(..)
 , BlackboardContext(..)
+, ViolationVec(..)
 , bestBlackboard
 ) where
 
@@ -18,6 +19,7 @@ import Control.Applicative
 import System.Random
 import qualified Data.Map as M
 import Data.Ord (comparing)
+import Data.Monoid
 
 import Debug.Trace (trace)
 
@@ -37,46 +39,58 @@ Since only the counterpoint is used to determine eq/ord of blackboards, we're fi
 Then we can generate the vectors of rule violations for descendents and use it to order.
 -}
 type Violation = Integer
-type Child = Blackboard
 data BlackboardContext = BlackboardContext
-  { hard :: Violation
-  , soft :: Violation
+  { hard :: ViolationVec
+  , soft :: ViolationVec
   , toRun :: [ TestLoc ]
-  , children :: [ Child ]
+  , parent :: Maybe Blackboard
   } deriving (Show)
 type BlackboardMap = M.Map Blackboard BlackboardContext
-instance Eq BlackboardContext where
-  a == b = hard a == hard b && soft a == soft b && children a == children b
 
 -- base context
 emptyBBCxt :: BlackboardContext
-emptyBBCxt = BlackboardContext 0 0 [] []
-
--- insert a child and add the child to its parent's children list
-insertWithParent :: Blackboard -> Blackboard -> BlackboardMap -> BlackboardMap
-insertWithParent p c bm = M.insert c emptyBBCxt . M.adjust addChild p $ bm
-  where addChild bc = bc { children = c : children bc }
+emptyBBCxt = BlackboardContext (VV [0]) (VV [0]) [] Nothing
 
 -- create the map with a base blackboard
 startWith :: Blackboard -> BlackboardMap
 startWith b = M.singleton b emptyBBCxt
 
+-- change the hard vector
+addHard :: ViolationVec -> Blackboard -> BlackboardMap -> BlackboardMap
+addHard v b m = continue . M.adjust (\cxt -> cxt { hard = new }) b $! m
+  where cxt = m M.! b
+        orig = hard cxt
+        new@(VV newls) = v `mappend` orig
+        continue = case parent cxt of
+                    Nothing -> id
+                    (Just p) -> addHard (VV $! 0:newls) p
+
+-- change the soft vector
+addSoft :: ViolationVec -> Blackboard -> BlackboardMap -> BlackboardMap
+addSoft v b m = continue . M.adjust (\cxt -> cxt { soft = new}) b $! m
+  where cxt = m M.! b
+        orig = soft cxt
+        new@(VV newls) = v `mappend` orig
+        continue = case parent cxt of
+                    Nothing -> id
+                    (Just p) -> addSoft (VV $! 0:newls) p
+
+-- add a blackboard. cascade the change upwards
+type Parent = Blackboard
+type Child = Blackboard
+addChild :: Parent -> Child -> BlackboardMap -> BlackboardMap
+addChild p c m = addHard mempty c . addSoft mempty c . M.insert c (emptyBBCxt { parent = Just p }) $! m
+
 -- get the best blackboard
 bestBlackboard :: BlackboardMap -> Blackboard
-bestBlackboard bm = best
-  where hardVecs = M.mapWithKey (\k _ -> hardVec bm k) bm
-        softVecs = M.mapWithKey (\k _ -> softVec bm k) bm
-        lengths = M.mapWithKey (\k _ -> durationOfCounterPoint k) bm
-        oneVec = M.intersectionWith (\as bs -> VV (concat (zipWith (\x y -> [x,y]) as bs))) 
-                                      hardVecs softVecs
-        together = M.intersectionWith (,) oneVec lengths
-        asList = M.assocs together
-        best = fst . L.maximumBy (comparing snd) $ asList
+bestBlackboard m = fst . L.maximumBy (comparing snd) $! merged
+  where getAll = M.assocs . M.mapWithKey (\k v -> (hard v, soft v, durationOfCounterPoint k)) $! m
+        merged = map (\(b,(h,s,l)) -> (b, (mergeVV h s, l))) getAll
 
 -- Define the ordering of two violation vectors.
 -- We want less violations, so smaller numbers are better.
 -- If we run off one list, we consider it to be extended with 0's.
-newtype ViolationVec = VV [Violation] deriving Eq
+newtype ViolationVec = VV [Violation] deriving (Eq, Show)
 instance Ord ViolationVec where
   compare (VV []) (VV []) = EQ
   compare (VV []) (VV (b:bs)) | b == 0 = comparing VV [] bs
@@ -85,17 +99,15 @@ instance Ord ViolationVec where
                               | otherwise = LT
   compare (VV (a:as)) (VV (b:bs)) | a == b = comparing VV as bs
                                   | otherwise = comparing negate a b
-
--- collect a property vector from the tree
-propVec :: Num a => (BlackboardContext -> a) -> BlackboardMap -> Blackboard -> [a]
-propVec f bm b = let cxt = bm M.! b in f cxt : merge (map (propVec f bm) (children cxt))
-  where merge = foldl merge2 [] 
-        merge2 [] ys = ys
-        merge2 xs [] = xs
-        merge2 (x:xs) (y:ys) = x + y : merge2 xs ys
-
-hardVec = propVec hard
-softVec = propVec soft
+instance Monoid ViolationVec where
+  mempty = VV []
+  mappend (VV []) b = b
+  mappend a (VV []) = a
+  mappend (VV (a:as)) (VV (b:bs)) = let (VV v) = mappend (VV as) (VV bs) in VV $! a+b : v
+                                  
+-- Given two ViolationVecs of the same length, create one that alternates elements from each
+mergeVV :: ViolationVec -> ViolationVec -> ViolationVec
+mergeVV (VV a) (VV b) = VV . concat . zipWith (\x y -> [x,y]) a $! b
 
 -- is it long enough?
 longEnough :: Blackboard -> Bool
@@ -106,18 +118,32 @@ outOfTests :: Blackboard -> BlackboardMap -> Bool
 outOfTests b bm = null . toRun . (M.! b) $ bm
 
 -- run the next test
-applyTest :: Blackboard -> BlackboardMap -> BlackboardMap
+{-applyTest :: Blackboard -> BlackboardMap -> BlackboardMap
 applyTest b bm = M.adjust (\bc -> bc { hard = newHard, soft = newSoft, toRun = tests }) b bm
   where cxt = bm M.! b
         (tl:tests) = toRun cxt
         agent = testAgent tl
         result = operate agent (lookAt b (testTime tl))
         newHard = hard cxt + if isHardRule agent && not (testResult result) then 1 else 0
-        newSoft = soft cxt + if isSoftRule agent && not (testResult result) then 1 else 0
+        newSoft = soft cxt + if isSoftRule agent && not (testResult result) then 1 else 0 -}
+
+-- run the queued tests
+applyAllTests :: Blackboard -> BlackboardMap -> BlackboardMap
+applyAllTests b m = addHard hardViolations b . addSoft softViolations b . clearTests b $! m
+  where cxt = m M.! b
+        (softTLs, hardTLs) = L.partition (isSoftRule . testAgent) (toRun cxt)
+        testAndCount = L.genericLength . filter (not . testResult) 
+                        . map (\tl -> operate (testAgent tl) (lookAt b (testTime tl))) 
+        softViolations = VV . (:[]) . testAndCount $! softTLs
+        hardViolations = VV . (:[]) . testAndCount $! hardTLs 
 
 -- queue up more tests
 addTests :: Blackboard -> [TestLoc] -> BlackboardMap -> BlackboardMap
 addTests b tests = M.adjust (\cxt -> cxt { toRun = toRun cxt ++ tests }) b
+
+-- nuke tests
+clearTests :: Blackboard -> BlackboardMap -> BlackboardMap
+clearTests b = M.adjust (\cxt -> cxt { toRun = [] }) b
 
 data ControlContext = ControlContext
   { testers :: [ Agent ]
@@ -136,22 +162,25 @@ makeControl agents scale source rg = ControlContext testers generators targetDur
         blackboards = startWith (create source basedscale rg)
 
 controlLoop :: ControlContext -> ControlContext
-controlLoop cc | longEnough best && outOfTests best (blackboards cc) = cc
-               | outOfTests best (blackboards cc) = controlLoop (applyGen cc' genAgent)
-               | otherwise = controlLoop $ cc { blackboards = applyTest best (blackboards cc) }
-  where genAgent = generators cc !! rint
+controlLoop cc | longEnough best && outOfTests best bm = cc
+               | outOfTests best bm = controlLoop (applyGen cc' genAgent)
+               | otherwise = controlLoop $! cc { blackboards = applyAllTests best bm }
+  where bm = blackboards cc
+        best = bestBlackboard bm
         (rint, newGen) = randomR (0, length (generators cc) - 1) (randGen cc)
+        genAgent = generators cc !! rint
         cc' = cc { randGen = newGen }
-        best = bestBlackboard (blackboards cc)
 
--- apply a generator to a blackboard
+-- apply a generator to a blackboard and put the new blackboard in the map
 applyGen :: ControlContext -> Agent -> ControlContext
 applyGen cc gen = cc { blackboards = modded, randGen = rGen newBoard }
-  where best = bestBlackboard (blackboards cc)
+  where bm = blackboards cc
+        best = bestBlackboard bm
         newBoard = operate gen (setGen best (randGen cc))
         changedTimes = findChangesInCP best newBoard
         tests = TL <$> changedTimes <*> testers cc
-        modded = trace (show . focus . front . counterPoint $ newBoard) addTests newBoard tests . insertWithParent best newBoard $ blackboards cc
+        modded = trace (show . focus . front . counterPoint $! newBoard)
+                  addTests newBoard tests . addChild best newBoard $! bm
 
 -- This is ok as is
 findChangesInCP :: Blackboard -> Blackboard -> [Time]
