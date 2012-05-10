@@ -18,6 +18,8 @@ type Time = Double
 agents :: [Agent]
 agents = [ firstSpeciesGenerator
          , consonantDownbeats
+         , approachPerfIntervalsByContraryOrOblique 
+         , noSimulRepeatsInBothCFAndCP 
          ]
 
 toBool = fromMaybe False
@@ -60,6 +62,7 @@ firstSpeciesGenerator = makeGenerator op "First species generator"
         newBB = setGen (modifyCP bb (const newCP)) gen'''
     in if isSimul then newBB else bb
 
+-- hard rule 1
 consonantDownbeats = makeHardRule op 
   "First species - all downbeats must be consonant (1st, 3rd, 5th, 6th, 8th & compounds)"
   where
@@ -71,17 +74,47 @@ consonantDownbeats = makeHardRule op
         result = toBool $ liftM isConsonant interval
     in if not (isFirstSpecies bb (timeToTestAt bb)) || result then passTest bb else failTest bb
 
--- TODO
-approachPerfIntervalsByContraryOrOblique = undefined
-noSimulRepeatsInBothCFAndCP = undefined
-max4NoteParallelRun = undefined
-skipsLessThanHalf = undefined
+-- hard rule 2
+approachPerfIntervalsByContraryOrOblique = flip makeHardRule "First species - Movement to a perfect interval must be contrary or oblique." $ \bb->
+  let cf = goToTime (cantusFirmus bb) (timeToTestAt bb)
+      cp = goToTime (counterPoint bb) (timeToTestAt bb)
+      cfNotes = cf >>= getBackN 2
+      cpNotes = cp >>= getBackN 2
+      cfUp = toBool $! cfNotes >>= \[cur,bk1] -> return $! Location bk1 < Location cur
+      cpUp = toBool $! cpNotes >>= \[cur,bk1] -> return $! Location bk1 < Location cur
+      isContraryOrOblique = (cfUp || cpUp) && not (cfUp && cpUp)
+      isToPerfect = toBool $! cfNotes >>= \[cf,_] -> cpNotes >>= \[cp,_] -> return (quality (cf # cp) == Perfect)
+  in if not (isFirstSpecies bb (timeToTestAt bb)) || not isToPerfect || isContraryOrOblique then passTest bb else failTest bb
+
+-- hard rule 3
+noSimulRepeatsInBothCFAndCP = flip makeHardRule "First species - Notes may be repeated in either CF or CP but not both." $ \bb ->
+  let cf = goToTime (cantusFirmus bb) (timeToTestAt bb)
+      cp = goToTime (counterPoint bb) (timeToTestAt bb)
+      cfNotes = cf >>= getBackN 2
+      cpNotes = cp >>= getBackN 2
+      bothRepeat = toBool $! cfNotes >>= \[cf1,cf2] -> cpNotes >>= \[cp1,cp2] -> return $! cf1 == cf2 && cp1 == cp2
+  in if not (isFirstSpecies bb (timeToTestAt bb)) || not bothRepeat then passTest bb else failTest bb
+
+-- hard rule 4
+max4NoteParallelRun = flip makeHardRule "First species - CP and CF may run parallel for up to four notes max." $ \bb ->
+  undefined
+-- hard rule 5
+skipsLessThanHalf = flip makeHardRule "First species - Skips must be less than half of melodic motions." $ \bb ->
+  undefined
+-- hard rule 6
 noDirectRepetition = undefined
 only2SequentialRepetition = undefined
+-- soft rule 1
 avoidMoreThan2PerfVertAdjacent = undefined
+-- soft rule 2
 avoidUnisonExceptStartAndEnd = undefined
+-- soft rule 3
 avoidSimulSkipsUnlessSmall = undefined
+-- soft rule 4
 avoidWideSeparation = undefined
+-- soft rule 5
 preferDirChangeAfterLargeSkipAndFollowWithStep = undefined
+-- soft rule 6
 tryToConnectExtremesWithSteps = undefined
+-- soft rule 7
 coverWholeOctaveEvery10To20Notes = undefined
