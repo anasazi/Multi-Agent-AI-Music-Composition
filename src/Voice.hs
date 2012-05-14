@@ -10,6 +10,9 @@ module Voice
 , getForwardN, getBackN
 , startTimeOfFocus, durationOfFocus, durationOfVoice
 , goToTime
+, isStart, isEnd
+, numBefore, numAfter
+, recentLocalExtreme
 ) where
 
 import Note
@@ -17,6 +20,7 @@ import qualified Data.List as L
 import Control.Monad
 import Data.Maybe
 import Control.Arrow
+import Data.Ord (comparing)
 
 type Focus = [Note]
 type Context = [Note]
@@ -28,6 +32,19 @@ runV (V x) = x
 makeVoice = V
 instance Eq Voice where
   a == b = focus (front a) == focus (front b)
+
+{- Building a lexicographic ordering for Voice. We need this so we can use a Map.
+   First we need an ordering on Note that has no overlap. -}
+newtype LPD = LPD Note
+instance Eq LPD where
+  (LPD a) == (LPD b) = a == b
+instance Ord LPD where
+  compare (LPD a) (LPD b) | l /= EQ = l | p /= EQ = p | otherwise = d
+    where l = comparing Location a b
+          p = comparing Pitch a b
+          d = comparing Duration a b
+instance Ord Voice where
+  compare a b = comparing (map LPD . focus . front) a b
 
 atStart, atEnd :: Focus -> Voice
 atStart ns = V (ns,[])
@@ -46,6 +63,12 @@ length' = L.genericLength
 
 modify :: (Focus -> Focus) -> Voice -> Voice
 modify f = runV >>> first f >>> makeVoice
+
+isStart = null . context
+isEnd = null . focus
+
+numBefore = length' . context
+numAfter = max 0 . subtract 1 . length' . focus
 
 forward1, back1 :: Voice -> Maybe Voice
 forward1 v = do let (foc,cxt) = runV v
@@ -104,3 +127,16 @@ goToTime v t = goToTimeHelper t v (startTimeOfFocus v)
                                                   cur' <- getCurrentNote v'
                                                   let dur = durAsNum cur'
                                                   goToTimeHelper tarT v' (curST + dur)
+
+-- find the most recent local extreme point
+recentLocalExtreme :: Voice -> Maybe Voice
+recentLocalExtreme v
+  | isStart v && isEnd v = Nothing -- the empty voice
+  | isStart v = Just v -- The first note is a local extreme
+  | numBefore v == 1 = back1 v >>= recentLocalExtreme -- Go to the first note
+  | otherwise = do [cur,bk1,bk2] <- getBackN 3 v -- we're going to check if bk1 is extreme
+                   let isMax = Location cur < Location bk1 && Location bk1 > Location bk2
+                   let isMin = Location cur > Location bk1 && Location bk1 < Location bk2
+                   let isExtreme = isMax || isMin
+                   let prev = back1 v
+                   if isExtreme then prev else prev >>= recentLocalExtreme

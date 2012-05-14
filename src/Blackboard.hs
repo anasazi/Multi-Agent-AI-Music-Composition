@@ -9,6 +9,7 @@ module Blackboard
 import Voice
 import Scale
 import System.Random (StdGen)
+import Data.Ord (comparing)
 
 data Blackboard = Blackboard
   { cantusFirmus :: Voice -- the read only source voice
@@ -18,6 +19,13 @@ data Blackboard = Blackboard
   , timeToTestAt :: Double -- where we shoud look
   , testResult :: Bool -- do we pass the test?
   } deriving Show
+
+{- For the purposes of placing Blackboards in a Map, they need an Ord instance.
+   Since the only thing we really care about is the counterpoint, that's what we'll use -}
+instance Eq Blackboard where
+  a == b = counterPoint a == counterPoint b
+instance Ord Blackboard where
+  compare = comparing counterPoint 
 
 create cf bs rg = Blackboard 
   { cantusFirmus = cf

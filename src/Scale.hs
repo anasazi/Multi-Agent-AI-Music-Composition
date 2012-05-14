@@ -41,7 +41,8 @@ inScale s b n = n `elem` allNotes s b
 bs $. n = let (s,b) = runBS bs in inScale s b n
 
 inScaleAt :: Scale -> Base -> Note -> Maybe Integer
-inScaleAt s b n = n `List.elemIndex` allNotes s b >>= return . fromIntegral
+--inScaleAt s b n = n `List.elemIndex` allNotes s b >>= return . fromIntegral
+inScaleAt s b n = fmap fromIntegral (n `List.elemIndex` allNotes s b)
 bs $@ n = let (s,b) = runBS bs in inScaleAt s b n
 
 
@@ -60,7 +61,7 @@ melmin = melodicMinor
 ionian = makeScale [ unison, maj2, maj3, perf4, perf5, maj6, maj7, octv ]
 dorian = makeScale [ unison, maj2, min3, perf4, perf5, maj6, min7, octv ]
 phrygian = makeScale [ unison, min2, min3, perf4, perf5, min6, min7, octv ]
-lydian = makeScale [ unison, maj2, maj3, lengthen 1 perf4{-aug4-}, perf5, maj6, maj7, octv ]
+lydian = makeScale [ unison, maj2, maj3, aug4, perf5, maj6, maj7, octv ]
 mixolydian = makeScale [ unison, maj2, maj3, perf4, perf5, maj6, min7, octv ]
 aeolian = makeScale [ unison, maj2, min3, perf4, perf5, min6, min7, octv ]
-locrian = makeScale [ unison, min2, min3, perf4, shorten 1 perf5{-dim5-}, min6, min7, octv ]
+locrian = makeScale [ unison, min2, min3, perf4, dim5, min6, min7, octv ]
