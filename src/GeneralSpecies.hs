@@ -20,7 +20,7 @@ agents = [ beginPerfectConsonance
          , noAug4Outline
          , endPerfectConsonance
          , fillInDim5OutlineAndOppStep
-         , moreStepsThanSkips
+--         , moreStepsThanSkips
          , avoidMaj6Skips
          , avoidMin6SkipsDown
          , precedeOrFollowSkipWithOppStep 

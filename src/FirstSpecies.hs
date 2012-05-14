@@ -12,6 +12,8 @@ import System.Random
 import Control.Monad
 import Data.Function (on)
 import Data.Maybe (fromMaybe)
+import qualified Data.List as L
+import Control.Applicative
 
 type Time = Double
 
@@ -20,6 +22,12 @@ agents = [ firstSpeciesGenerator
          , consonantDownbeats
          , approachPerfIntervalsByContraryOrOblique 
          , noSimulRepeatsInBothCFAndCP 
+         , max4NoteParallelRun 
+         , skipsLessThanHalf 
+         , avoidMoreThan2PerfVertAdjacent 
+         , avoidUnisonExceptStartAndEnd 
+         , avoidSimulSkipsUnlessSmall 
+         , avoidWideSeparation 
          ]
 
 toBool = fromMaybe False
@@ -97,21 +105,74 @@ noSimulRepeatsInBothCFAndCP = flip makeHardRule "First species - Notes may be re
 
 -- hard rule 4
 max4NoteParallelRun = flip makeHardRule "First species - CP and CF may run parallel for up to four notes max." $ \bb ->
-  undefined
+  let cf = goToTime (cantusFirmus bb) (timeToTestAt bb)
+      cp = goToTime (counterPoint bb) (timeToTestAt bb)
+      cfNotes = cf >>= getBackN 5
+      cpNotes = cp >>= getBackN 5
+      intervals = liftM2 (zipWith (#)) cfNotes cpNotes
+      allEqual = toBool $! liftM ((==1) . length . L.group) intervals
+  in if not (isFirstSpecies bb (timeToTestAt bb)) || not allEqual then passTest bb else failTest bb
+
 -- hard rule 5
 skipsLessThanHalf = flip makeHardRule "First species - Skips must be less than half of melodic motions." $ \bb ->
-  undefined
--- hard rule 6
-noDirectRepetition = undefined
+  let cp = goToTime (counterPoint bb) (timeToTestAt bb)
+      notes = cp >>= \cpV -> getCurrentNote cpV >>= \cur -> Just (cur : context cpV)
+      intervals = liftM (\x -> zipWith (#) x (drop 1 x)) notes
+      isSkip = (>2) . lspan
+      numSkips = liftM (length . filter isSkip) intervals
+      numCFmotions = length . focus . front . cantusFirmus $! bb
+      tooMany = toBool $! liftM ((>= numCFmotions) . (*2)) numSkips
+  in if not (isFirstSpecies bb (timeToTestAt bb)) || not tooMany then passTest bb else failTest bb
+
+-- hard rule 6 NYI
+noDirectRepetition = {-flip makeHardRule "First species - Do not repeat a sequence of at least 2 motions and intervals without at least two intervening whole notes." $ \bb ->
+  let cf = goToTime (cantusFirmus bb) (timeToTestAt bb)
+      cp = goToTime (counterPoint bb) (timeToTestAt bb)
+      cfNotes = liftM2 (:) (cf >>= getCurrentNote) (fmap context cf)
+      cpNotes = liftM2 (:) (cp >>= getCurrentNote) (fmap context cp)
+      isSyncd = liftM2 (on (==) startTimeOfFocus) cf cp
+      isFirstSpeciesSection cfs cps = allWhole cfs && allWhole cps
+        where allWhole = all (on (==) Duration whole)
+     -- isValidSection = (&&) <$> even <*> (>4)
+  in-} undefined
 only2SequentialRepetition = undefined
+
 -- soft rule 1
-avoidMoreThan2PerfVertAdjacent = undefined
+avoidMoreThan2PerfVertAdjacent = flip makeSoftRule "First species - Avoid more than two perfect vertical intervals in a row." $ \bb ->
+  let cf = goToTime (cantusFirmus bb) (timeToTestAt bb)
+      cp = goToTime (counterPoint bb) (timeToTestAt bb)
+      cfNotes = cf >>= getBackN 3
+      cpNotes = cp >>= getBackN 3
+      intervals = liftM2 (zipWith (#)) cfNotes cpNotes :: Maybe [Interval]
+      tooManyPerfect = toBool $ liftM (all ((==Perfect) . quality)) intervals
+  in if not (isFirstSpecies bb (timeToTestAt bb)) || not tooManyPerfect then passTest bb else failTest bb
+  
 -- soft rule 2
-avoidUnisonExceptStartAndEnd = undefined
+avoidUnisonExceptStartAndEnd = flip makeSoftRule "First species - Avoid vertical unisons except on the first and last notes." $ \bb ->
+  let cf = goToTime (cantusFirmus bb) (timeToTestAt bb) >>= getCurrentNote
+      cp = goToTime (counterPoint bb) (timeToTestAt bb) >>= getCurrentNote
+      isUnison = toBool $ liftM (==unison) $ liftM2 (#) cf cp
+      okTime = toBool $ (||) <$> isStart <*> isEnd <$> goToTime (counterPoint bb) (timeToTestAt bb)
+  in if not (isFirstSpecies bb (timeToTestAt bb)) || okTime || not isUnison then passTest bb else failTest bb
+
 -- soft rule 3
-avoidSimulSkipsUnlessSmall = undefined
+avoidSimulSkipsUnlessSmall = flip makeSoftRule "First species - Avoid simultaneous skips in both voices unless both only move a third." $ \bb ->
+  let cf = goToTime (cantusFirmus bb) (timeToTestAt bb) >>= getBackN 2 >>= \[cur,bk1] -> return $ cur # bk1
+      cp = goToTime (counterPoint bb) (timeToTestAt bb) >>= getBackN 2 >>= \[cur,bk1] -> return $ cur # bk1
+      isTooBigSkip = (>3) . lspan
+      bigSimulSkips = toBool $ do cfI <- cf
+                                  cpI <- cp
+                                  return $ isTooBigSkip cfI && isTooBigSkip cpI
+  in if not (isFirstSpecies bb (timeToTestAt bb)) || not bigSimulSkips then passTest bb else failTest bb
+
 -- soft rule 4
-avoidWideSeparation = undefined
+avoidWideSeparation = flip makeSoftRule "First species - Avoid separating voices more than a twelth." $ \bb ->
+  let cf = goToTime (cantusFirmus bb) (timeToTestAt bb) >>= getCurrentNote
+      cp = goToTime (counterPoint bb) (timeToTestAt bb) >>= getCurrentNote
+      interval = liftM2 (#) cf cp
+      tooFarApart = toBool $ fmap ((>12) . lspan) interval
+  in if not (isFirstSpecies bb (timeToTestAt bb)) || not tooFarApart then passTest bb else failTest bb
+
 -- soft rule 5
 preferDirChangeAfterLargeSkipAndFollowWithStep = undefined
 -- soft rule 6
