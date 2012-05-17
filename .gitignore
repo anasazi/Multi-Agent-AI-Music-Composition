@@ -5,3 +5,6 @@
 *.toc
 *.fdb_latexmk
 *.synctex.gz
+*.hi
+*.o
+main
