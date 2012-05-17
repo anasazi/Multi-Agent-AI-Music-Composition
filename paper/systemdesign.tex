@@ -16,11 +16,7 @@ The Control decides which Knowledge Sources run and when the problem has been so
 
 For this music composition system, the Blackboard contains two major items: the given musical line, the \emph{cantus firmus}, and the musical line in the progress of composition, the \emph{counterpoint}.
 Both the \emph{cantus firmus} and the counterpoint are Voices (see appendix), but the \emph{cantus firmus} is read-only.
-%Both provide a context-aware location reference (known as a Zipper) that makes it easier for Knowledge Sources and the Control to communicate about particular areas of a composition.
 The Blackboard also contains other minor, but important, information such as the key or mode of the composition. This is mainly for ease of reference.
-% TODO move this part into the discussion of the Control
-%An important aspect of our implementation is that the Blackboard is immutable, a side effect of using Haskell as the implementation language.
-%This is actually very useful because if a potential composition runs into a dead end, previous versions of the Blackboard are still around, making backtracking trivial.
 
 \subsection{Knowledge Sources} % talk about the general structure for agents
 
@@ -53,13 +49,15 @@ The Control keeps a map from Blackboards to useful metadata:
 The Control picks the best Blackboard to operate on 
   where the best Blackboard has the minimal vector of violations under a lexicographic ordering 
   with ties broken by prefering Blackboards with longer counterpoints.
-This ordering of Blackboards allows arbitrary backtracking and efficient comparison.
+Using this ordering, the Control operates on the best Blackboard at any given time, 
+  running tests and applying generators until it finds a Blackboard that passes the tests and is as long as the \emph{cantus firmus}.
 
-Using this record keeping scheme, the Control works as follows.
-Get the best Blackboard $B$.
-If the counterpoint of $B$ is as long as the \emph{cantus firmus} and $B$ has no queued tests, then the composition is complete.
-If the counterpoint of $B$ is not long enough and $B$ has queued tests, run all those tests and record the results in the metadata. 
-  Cascade changes in the violation vector up the chain of parents.
-If the counterpoint of $B$ is not long enough and $B$ has no queued tests, pick a generator at random and apply it to $B$ to create $B'$.
-  Identify which parts of the counterpoint changed in $B'$ relative to $B$ and queue tests for $B'$ to check those parts.
-Identify the new best Blackboard and repeat.
+% TODO move to implementation details
+%Using this record keeping scheme, the Control works as follows.
+%Get the best Blackboard $B$.
+%If the counterpoint of $B$ is as long as the \emph{cantus firmus} and $B$ has no queued tests, then the composition is complete.
+%If the counterpoint of $B$ is not long enough and $B$ has queued tests, run all those tests and record the results in the metadata. 
+  %Cascade changes in the violation vector up the chain of parents.
+%If the counterpoint of $B$ is not long enough and $B$ has no queued tests, pick a generator at random and apply it to $B$ to create $B'$.
+  %Identify which parts of the counterpoint changed in $B'$ relative to $B$ and queue tests for $B'$ to check those parts.
+%Identify the new best Blackboard and repeat.
