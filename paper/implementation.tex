@@ -54,6 +54,19 @@ Finding the best Blackboard is also linear in the number of Blackboards as it is
 
 % discuss addition of time parameter and turning agents into inductive rules
 \subsection{Using a Time Parameter for Efficient Agents}
+Counterpoint rules are usually specified as universals, applying across the entire counterpoint.
+However, retesting the entire counterpoint after only making a small change, such as added a new note to the end, is wasteful.
+Many universal rules can be viewed as a local rule checked over a sequence.
+For example, one first species rule is ``All downbeats must form consonant vertical intervals'', 
+  which ensures that the interval between the \emph{cantus firmus} and the counterpoint does not create a dissonance as both voices play a note.
+This is easily rephrased as ``For each downbeat, the vertical interval is consonant''.
+In this case, to test whether the whole counterpoint obeys this rule, only the changed notes need to be examined.
+Since we are working on the best Blackboard, we can assume that either everything else has already passed or 
+  we cannot do better so it does not matter if the rest passed or not.
+Note that some rules cannot be recast to checking only the most recent case, for example the rule ``Skips must be less than half of all melodic motions''
+
+Thus, by implementing rules with agents that check only the most recent case from a given point, 
+the system can usually do less total work by dispatching theses agents only on the modified regions of counterpoint.
 
 % details of how testers work
 \subsection{Running Testers}
