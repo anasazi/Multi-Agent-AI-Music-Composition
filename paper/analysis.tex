@@ -30,5 +30,18 @@ The presence of these progressions implies that they arise naturally from the co
 
 \subsection{Composition Speed} 
 % fast 
-% TODO write
-% TODO maybe make a graph/histogram/stats of composition speeds
+Runtimes for 30 compositions of a 24 second counterpoint were recorded on a single core virtual machine.
+The average runtime was 137.95 seconds with a standard deviation of 154.53 seconds.
+The fastest run took 8.26 seconds and the longest took 742.99 seconds.
+Five of the 30 runs took less time to compose than the composition takes to play, which requires an talented improvisationist for humans.
+The longest run, 742.99 seconds or 12 minutes 23 seconds, is about how long an experienced music theory student may take to compose an equivalent piece.
+The variance in runtime is primarily due to the random nature of the generator and the potentially large collection of poor generations the system will run through.
+
+The structure of system creates many opportunities to increase performance by exploiting parallelism, although none have been implemented.
+The first opportunity is the execution of testers, which all share an input, but operate independently. A parallel map/foreach would work well here.
+The second opportunity is the process of finding the best blackboard, which is a scan across the (potentially very large) list to find the maximum. A parallel fold/reduce would offer significant speed up.
+Those two improvements take care of the most computationally intensive parts of the current system and do not require any agents to change their implementation.
+Additionally, the system could attempt to find better counterpoints more quickly by generating several new counterpoints at a time or by operating on the top several counterpoints instead of only the best.
+It is common for one counterpoint to be the best for a chain of several generations, so generating several new counterpoints eliminates the best blackboard search overhead in the common case.
+Operating on the top several counterpoints may help the system avoid wasting time working on a dead end.
+For both changes, the parallel operations are mostly independent, with the exception of every thread needs to modify the shared blackboard metadata map.
