@@ -2,27 +2,27 @@
 
 % discuss what counterpoint rules are like: hard/soft, species/general, complexity, particular implementations
 \subsection{Counterpoint as a Ruleset}
-Counterpoint originated in the Baroque and Rennaisance as a teaching tool, so it is very structured and thoroughly studied.
+Counterpoint originated in the Baroque and Renaissance as a teaching tool, so it is very structured and thoroughly studied.
 The basic task in Counterpoint is to write an accompanying voice, called the counterpoint, to a provided fixed voice, called the \emph{cantus firmus}.
 The form of the counterpoint has several varieties, known as species. 
-For example, first species uses whole notes simultaneous with the notes in the \emph{cantus firmus}, while second pecies uses a pair of half notes.
+For example, first species uses whole notes simultaneous with the notes in the \emph{cantus firmus}, while second species uses a pair of half notes.
 Each species has a set of rules that define valid solution counterpoints.
 These rules deal almost entirely with either intervals between the counterpoint and the \emph{cantus firmus} (a vertical interval) or intervals between two notes in the counterpoint (a horizontal interval).
 
 Counterpoint rules come in hard and soft varieties. 
 Hard rules should never be violated and usually forbid severe dissonances, excessive repetition, and degenerate counterpoints that sound too similar to the \emph{cantus firmus}.
 Soft rules are style guidelines and should be followed as much as possible, but is is okay to violate them if necessary to progress or just for occasional variety.
-Exmaples of soft rules are preferences like avoiding wide separation between voices, avoiding skipping in both voices simultaneously, and using stepwise motion more often that skipping motions.
+Examples of soft rules are preferences like avoiding wide separation between voices, avoiding skipping in both voices simultaneously, and using stepwise motion more often that skipping motions.
 
 % detailed look at what the Control does
 \subsection{Control Strategy}
 The Control keeps a map from Blackboards to useful metadata: 
   which tests still need to run on that Blackboard,
   the parent Blackboard that this Blackboard was generated from,
-  and the number and type of rule violations of this Blackboard and its descendents in vector form.
+  and the number and type of rule violations of this Blackboard and its descendants in vector form.
 The Control picks the best Blackboard to operate on 
   where the best Blackboard has the minimal vector of violations under a lexicographic ordering 
-  with ties broken by prefering Blackboards with longer counterpoints.
+  with ties broken by preferring Blackboards with longer counterpoints.
 
 Using this record keeping scheme, the Control works as follows.
 Get the best Blackboard $B$.
@@ -36,19 +36,19 @@ Identify the new best Blackboard and repeat.
 % details of how to implement blackboard ordering efficiently
 \subsection{Ordering Blackboards Efficiently}
 The Blackboard ordering went through several iterations.
-In the first version, a Blackboard only knew whether it violated any rules, but had no knowledge about the existance or behavior of its ancestors or descendents.
+In the first version, a Blackboard only knew whether it violated any rules, but had no knowledge about the existence or behavior of its ancestors or descendants.
 This ordering enabled one note of backtracking, which was sufficient if the active rules were relaxed enough;
 however, with the full counterpoint ruleset, this system would regularly get trapped at a local optimum where no possible note would be a valid next step.
 
 We found that this issue could be partially fixed if Blackboards kept track of the violations of their children. 
 This extension added a second note of backtracking, so it did not solve the problem entirely, but it indicated a way to solve it in general.
-If Blackboards could track violations for all their descendents, the system could backtrack abitrarily far to escape any local optimum.
+If Blackboards could track violations for all their descendants, the system could backtrack arbitrarily far to escape any local optimum.
 
 The first version of violation vectors had Blackboards record their children, but only stored their own number of violations.
-The violation vector was recomputed everytime, which had a severe performance penalty and became exponentially worse as more Blackboards were generated.
+The violation vector was recomputed every time, which had a severe performance penalty and became exponentially worse as more Blackboards were generated.
 We eliminated the performance problem by inverting the references and caching the vectors.
 Instead of parents holding references to all their children, each child held a reference to its single parent.
-Instead of a Blackboard only knowing whether it violated any rules, it had a vector with its rule violations and all its descendents' violations.
+Instead of a Blackboard only knowing whether it violated any rules, it had a vector with its rule violations and all its descendants' violations.
 When a Blackboard was created or updated, the changes in the vector were propagated up the chain of parent references, which linear in the number of Blackboards in the worse case.
 Finding the best Blackboard is also linear in the number of Blackboards as it is just a scan over the map.
 

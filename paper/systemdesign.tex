@@ -45,7 +45,7 @@ The Control tracks the history of the Blackboard to help it choose how to preced
 For each version of the Blackboard, the Control records some useful metadata:
   which tests still need to run for a Blackboard,
   the parent of a Blackboard, which is just the Blackboard it was generated from,
-  and the number and type of rule violations of a Blackboard and its descendents.
+  and the number and type of rule violations of a Blackboard and its descendants.
 Using this ordering of Blackboards based on rule violations and counterpoint length, 
   the Control operates on the best Blackboard at any given time, 
   running tests and applying generators until it finds a Blackboard that passes the tests and is as long as the \emph{cantus firmus}.

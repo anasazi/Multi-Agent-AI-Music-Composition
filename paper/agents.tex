@@ -14,7 +14,7 @@ Testers examine a counterpoint line (usually at the current end) to see if it ac
 %\caption{The generator and tester agent dynamic}
 %\end{figure}
 
-Agents can also be divided by the ruleset they help implement. 
+Agents can also be divided by the rule set they help implement. 
 In this case, there are general counterpoint rules that apply to all species of counterpoint, and there are first species specific rules.
 %For example, implementing florid counterpoint involves six rulesets: general rules, four sets of species specific rules, and species boundary rules.
 
@@ -35,7 +35,7 @@ Therefore, general counterpoint has no generators.
 		\item No augmented or diminished skips. No skips larger than a sixth unless it is an octave.
 					Implementation involves checking the current and previous notes to build the interval and test it.
 
-		\item The first and last notes of each part (\emph{cantus firmus} and counterpoint) must form a perfect consonant interval, i.e. a perfect unison, fifth, octave, or occasionaly a twelth.
+		\item The first and last notes of each part (\emph{cantus firmus} and counterpoint) must form a perfect consonant interval, i.e. a perfect unison, fifth, octave, or occasionally a twelfth.
           The implementation of this rule automatically passes interior notes.
 
 		\item No outlines of augmented fourths. No outlines of diminished fifths unless completely filled in and followed by an opposite direction step.
@@ -80,7 +80,7 @@ This enables rules for different species to be mixed while only enforcing releva
 \subparagraph{Hard Rules}
 	\begin{enumerate}
 		\item All downbeats, which in the case of first species is all beats, must be consonant with the \emph{cantus firmus}. 
-					Consonant intervals are unisons, thrids, fifths, sixths, octaves, and their compounds.
+					Consonant intervals are unisons, thirds, fifths, sixths, octaves, and their compounds.
 					This agent just checks the current note with the corresponding note in the \emph{cantus firmus}.
 
 		\item Enter perfect intervals only by contrary motion, in which voices move in opposite directions, or oblique motion, in which one voice does not move.
