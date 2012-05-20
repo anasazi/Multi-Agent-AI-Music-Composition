@@ -1,3 +1,60 @@
 \section{Representing Music}
 
-talk about how musical entities are represented and manipulated by agents and stored on the blackboard
+The two fundamental elements of music from the theoretical perspective are notes, which define positions on the staff, a frequency, and a duration, 
+and intervals, which define motion and distance between positions on the staff and between frequencies. Everything else is built upon this base.
+This representation of music was derived some several texts on music theory. \cite{TonalHarmony, MusicTheoryPractice, MusicTheoryHandbook}
+
+\subsection{Notes}
+Notes are usual defined as ``a pitch over a duration'', which is true from a purely audio perspective.
+However, this definition misses an important element of notes in music theory, namely that they represent positions on the staff as well.
+Any two positions on the staff can represent the same pitch if enough accidentals are used, 
+but even if two notes represent the same pitch, if they are at different staff positions then music theory considers them distinct.
+Thus, we have: $$ Notes = Position \times Pitch \times Duration $$
+
+Positions on the staff are specified by a letter (A-G) and an octave number. The origins of this system stem from how we hear different pitches, which we will not go into here.
+Middle C is defined to be C4 and the octave number changes when moving from B to C. Therefore, the position directly below C4 is B3.
+The octave number can be any integer, although any octave outside of 2 through 6 is very unusual.
+
+Each position on the staff has a corresponding pitch, but not every pitch has a location on the staff. 
+Adjacent locations are separated by either a whole-step or a half-step. Only the pairs BC and EF are separated by half-steps.
+The locations separated by whole-steps hide a pitch between them.
+These pitches are achieved by modifying the base (or natural) pitch of a location with \emph{accidentals}.
+In music notation, accidentals are denoted with flats (lower one half-step each) or sharps (higher one half-step each).
+Sometimes, double flats or double sharps are used.
+If we treat an accidental as the number of half-steps to raise a pitch, then accidentals generalize nicely to any interger.
+Flats are simply negative accidentals.
+
+The duration of a note is denoted by a combination of two elements.
+Basic durations are some number of halvings of a whole note.
+1 whole note is 2 half notes is 4 quarter notes is 8 eighth notes and so on.
+This can go arbitrarily deep, but it is unusual to see anything smaller than sixteenth notes.
+The duration can be further modified by writting dots after the note.
+Each dot extends the duration by 50\% of the existing duration.
+A natural way to generalize duration is with a pair of nonnegative integers: the number of halvings of a whole note and the number of dots applied.
+Given this pair, the actual duration as a fraction of a whole note is easily computed.
+
+Thus, our representation of a note becomes $$ Notes = Letter \times OctaveNumber \times Accidental \times Halvings \times Dots $$
+
+Each of the three aspects of a note provides a concept of ordering, difference, and motion along only that aspect.
+
+\subsection{Intervals}
+Intervals embody musical distance, which involves both distance on the staff and distance between pitches.
+One oddity of music notation is that the distance on the staff is actually written as the number of locations spanned by the interval.
+Thus, the interval that does not change location is a first and not a zeroth interval.
+As with notes, each aspect of an interval provides us a concept of ordering, difference, and motion.
+In music theory, intervals are denoted with their letter span and their quality, which is a property derived from the letter span and the half-step width.
+We represent intervals with: $$ Intervals = LetterSpan \times HalfStepWidth $$
+
+Intervals have an associative binary operator, interval composition, which is simply the interval created by gluing two intervals together.
+This operator has an identity, the unison interval, which has a letter span of one and a half-step width of zero.
+Therefore, intervals are a monoid.
+
+Music theory has a concept of the inverse of an interval, which brings forth the question of whether intervals form a group.
+However, the inverse of an interval is not a mathematical inverse. In fact, for most intervals it is not even an invertible function.
+Intervals are either simple, not bigger than an octave, or compound.
+The inverse of a simple interval is the interval that when the two are composed together form an octave.
+Already, things break down as the inverse of the unison is the octave. That is, the inverse of the identity is not the identity.
+Furthermore, the inverse of a compound interval is the inverse of the corresponding simple interval, which is the compound interval mod an octave.
+Therefore, while for simple intervals the inverse of the inverse is the original interval, for compound intervals this is not the case.
+Thus, intervals are certainly not a group under the usual music theory definitions.
+

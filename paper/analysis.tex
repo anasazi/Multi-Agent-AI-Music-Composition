@@ -1,0 +1,47 @@
+\section{Analysis of Generated Music}
+
+\subsection{Variety} 
+% no repeats, detectable difference in both audio and theory 
+While deterministic AIs are useful in some contexts, variety is preferred in music composition.
+Even though the first species implementation uses a non-deterministic generator, it does not follow that the system as a whole is non-deterministic.
+If the rules are constraining enough, only a single result could be acceptable.
+Fortunately, this does not turn out to be the case.
+In testing with a single \emph{cantus firmus}, the system has never repeated a composition and has generated 32 unique compositions.
+More importantly, these compositions are noticeably different when played, even to non-experts.
+While entirely possible for the system to generate duplicates, it appears to be a rare event.
+
+\subsection{Quality} 
+% always finds something without violations eventually. more regular than human composed music. 
+The 32 compositions discussed in the previously, in addition to being unique, made no rule violations.
+That is, in every test, the system found a composition that was ``perfect'' from the perspective of first species counterpoint.
+Compared to the human composition using the same \emph{cantus firmus}, several of the AI compositions sound more regular or repetitive.
+Overall, the AI compositions are certainly recognizable as music and comparable with human composed equivalents, but a listener can usually differentiate between the two.
+
+\subsection{Emergent Complexity} 
+% chord progressions 
+While some of the counterpoint rules deal with whole-composition properties, 
+such as the ratio of skips and steps, all rules regulating structure work on a local area.
+There is no conception of a whole-composition structure such as progression or cadence.
+However, a noticeable property of the AI compositions is the common presence of recognizable chord progressions.
+These progressions give the AI compositions a sense of structure and contribute significantly to the quality.
+The common chord progressions, such as IV-V-I, appear often throughout the AI compositions.
+More complex progressions, such as V-vi-IV-I, appear as well.
+The presence of these progressions implies that they arise naturally from the combination of rules in first species counterpoint.
+
+\subsection{Composition Speed} 
+% fast 
+Runtimes for 30 compositions of a 24 second counterpoint were recorded on a single core virtual machine.
+The average runtime was 137.95 seconds with a standard deviation of 154.53 seconds.
+The fastest run took 8.26 seconds and the longest took 742.99 seconds.
+Five of the 30 runs took less time to compose than the composition takes to play, which requires an talented improvisationist for humans.
+The longest run, 742.99 seconds or 12 minutes 23 seconds, is about how long an experienced music theory student may take to compose an equivalent piece.
+The variance in runtime is primarily due to the random nature of the generator and the potentially large collection of poor generations the system will run through.
+
+The structure of system creates many opportunities to increase performance by exploiting parallelism, although none have been implemented.
+The first opportunity is the execution of testers, which all share an input, but operate independently. A parallel map/foreach would work well here.
+The second opportunity is the process of finding the best blackboard, which is a scan across the (potentially very large) list to find the maximum. A parallel fold/reduce would offer significant speed up.
+Those two improvements take care of the most computationally intensive parts of the current system and do not require any agents to change their implementation.
+Additionally, the system could attempt to find better counterpoints more quickly by generating several new counterpoints at a time or by operating on the top several counterpoints instead of only the best.
+It is common for one counterpoint to be the best for a chain of several generations, so generating several new counterpoints eliminates the best blackboard search overhead in the common case.
+Operating on the top several counterpoints may help the system avoid wasting time working on a dead end.
+For both changes, the parallel operations are mostly independent, with the exception of every thread needs to modify the shared blackboard metadata map.
