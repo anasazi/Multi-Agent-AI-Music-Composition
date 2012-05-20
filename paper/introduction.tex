@@ -53,7 +53,7 @@
 %%% Third Version
 This work describes a music composition system that uses a multi-agent blackboard approach.
 Agents are derived from both the music theoretic rules defining a genre or style as well as the strategies for improving a partial composition by extending or modifying it.
-These two types of agents work in tandem to incrementaly improve compositions until a valid solution is found.
+These two types of agents work in tandem to incrementally improve compositions until a valid solution is found.
 This multi-agent approach enables independent agents to use techniques appropriate for the subproblem they are trying to solve, such as constructing a melody versus constructing a harmony,
 makes it much easier to change the genre or style of composition, which requires only adding or removing agents,
 and offers many more opportunities for exploiting modern hardware's parallelism capabilities than single agent approaches.
@@ -69,12 +69,12 @@ Other genres, like Jazz, have no known model and cannot be targeted by music the
 Model-based composition systems have used many different approaches, including constraint solvers, genetic algorithms, L-systems, generative grammars, and many more.
 \cite{Anders2010, Burton1999, Edwards2011, Pachet, Papadopoulos1999, Sandred2010}
 Interestingly, existing model-based systems are all single agent systems that use only one approach for the entire problem of music composition.
-A noticeable consequence of this is that different approachs tend to have problems with some aspect of composing music.
+A noticeable consequence of this is that different approaches tend to have problems with some aspect of composing music.
 Constraint solvers are seen almost exclusively in the context of composing harmonies, which is the one aspect of music primarily defined by constraints, but make no mention of melodies or other aspects.
 \cite{Anders2010, Pachet, Sandred2010}
 Inversely, genetic algorithms have noted problems with evaluating and enforcing harmonic constraints, but can produce interesting melodies.
 \cite{Burton1999}
-This is indicitive of the fact that different aspects of music have vastly different and often competing ideals of quality.
+This is indicative of the fact that different aspects of music have vastly different and often competing ideals of quality.
 The best example is the constraint-oriented harmony and the free-form melody.
 
 A few computer music systems have used multi-agent approaches, but they were for expressive performance \cite{Miranda2010} and real-time human-assisted generation \cite{Eigenfeldt2009}, not for composition.
